@@ -109,61 +109,41 @@ theorem not_mem_and_mem_not (p : T.PartialType α) :
 theorem isMax_iff_forall_mem_or_not_mem (p : T.PartialType α) :
     IsMax p ↔ ∀ (φ : L.Formula α), φ ∈ p ∨ φ.not ∈ p := by
   rw [isMax_iff_forall_not_lt]
-  constructor <;> intro h
-  · contrapose! h
-    obtain ⟨φ,hφ,hφn⟩ := h
+  constructor
+  · intro h
+    contrapose! h
+    obtain ⟨φ, hφ, hφn⟩ := h
     obtain ⟨M⟩ := p.isSatisfiable
     haveI : (L.lhomWithConstants α).IsExpansionOn M :=
       LHom.isExpansionOn_reduct _ _
     let v : α → M := fun a => L.con a
-    have : φ.Realize v ∨ φ.not.Realize v := by
-      exact Formula.realize_sup.mp fun a ↦ a
-    rcases this with hφr | hφnr
-    · let q : T.PartialType α := by
-        refine ofSet (p.toSet ∪ {φ}) ?_
-        haveI : M ⊨ (T.withSet (p.toSet ∪ {φ})) := by
+    have h_ext : ∀ {ψ : L.Formula α}, ψ.Realize v → ψ ∉ p → ∃ q : T.PartialType α, p < q := by
+      intro ψ hψ hψn
+      let q : T.PartialType α := by
+        refine ofSet (p.toSet ∪ {ψ}) ?_
+        haveI : M ⊨ (T.withSet (p.toSet ∪ {ψ})) := by
           simp only [union_singleton, model_iff]
-          intro ψ hψ
-          rcases hψ with hψ | hψ
-          · exact M.is_model.realize_of_mem ψ (p.subset_toTheory hψ)
-          · rcases hψ with ⟨φ',hφ'eq|hφ'im,hφ''⟩
-            · simp only [← hφ'', hφ'eq, Formula.realize_equivSentence]
-              exact hφr
-            · simp only [←hφ'']
+          intro χ hχ
+          rcases hχ with hχ | hχ
+          · exact M.is_model.realize_of_mem χ (p.subset_toTheory hχ)
+          · rcases hχ with ⟨χ', hχ'eq | hχ'im, hχ''⟩
+            · simp only [← hχ'', hχ'eq, Formula.realize_equivSentence]
+              exact hψ
+            · simp only [← hχ'']
               exact M.is_model.realize_of_mem
-                (Formula.equivSentence φ') (mem_toTheory_of_mem p hφ'im)
+                (Formula.equivSentence χ') (mem_toTheory_of_mem p hχ'im)
         exact Model.isSatisfiable M
-      exists q
-      simpa [PartialType.lt_iff_ssubset, q] using ssubset_insert hφ
-    · let q : T.PartialType α := by
-        refine ofSet (p.toSet ∪ {φ.not}) ?_
-        haveI : M ⊨ (T.withSet (p.toSet ∪ {φ.not})) := by
-          simp only [union_singleton, model_iff]
-          intro ψ hψ
-          rcases hψ with hψ | hψ
-          · exact M.is_model.realize_of_mem ψ (p.subset_toTheory hψ)
-          · rcases hψ with ⟨φ',hφ'eq|hφ'im,hφ''⟩
-            · simp only [← hφ'', hφ'eq, Formula.realize_equivSentence]
-              exact hφnr
-            · simp only [←hφ'']
-              exact M.is_model.realize_of_mem
-                (Formula.equivSentence φ') (mem_toTheory_of_mem p hφ'im)
-        exact Model.isSatisfiable M
-      exists q
-      simpa [PartialType.lt_iff_ssubset, q] using ssubset_insert hφn
-  · contrapose! h
-    obtain ⟨q,hq⟩ := h
-    rw [PartialType.lt_iff_ssubset, ssubset_iff_insert] at hq
-    obtain ⟨φ,hφ,hpq⟩ := hq
-    exists φ, hφ
-    by_contra hφn
-    have : p.toSet ⊆ q.toSet := by grind
-    apply this at hφn
-    change φ.not ∈ q at hφn
-    have hφ' : φ ∈ q := by
-      change φ ∈ q.toSet
-      grind
-    exact (q.not_mem_and_mem_not φ) ⟨hφ',hφn⟩
+      exact ⟨q, by simpa [PartialType.lt_iff_ssubset, q] using ssubset_insert hψn⟩
+    have h_realize : φ.Realize v ∨ φ.not.Realize v := Formula.realize_sup.mp fun a ↦ a
+    exact h_realize.elim (fun hφr => h_ext hφr hφ) fun hφnr => h_ext hφnr hφn
+  · intro h
+    contrapose! h
+    obtain ⟨q, hq⟩ := h
+    rw [PartialType.lt_iff_ssubset] at hq
+    obtain ⟨φ, hφq, hφp⟩ := Set.exists_of_ssubset hq
+    refine ⟨φ, hφp, ?_⟩
+    intro hφn
+    exact (q.not_mem_and_mem_not φ) ⟨hφq, hq.1 hφn⟩
 
 /-- A tuple realizes a partial type if it realizes every formula in it. -/
 def RealizedBy {M : Type w'} [L.Structure M] (p : T.PartialType α) (v : α → M) : Prop :=
