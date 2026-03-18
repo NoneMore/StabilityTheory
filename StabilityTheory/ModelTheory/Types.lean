@@ -110,6 +110,15 @@ theorem exists_le_completeType (p : T.PartialType α) :
   obtain ⟨M,q,hq,hpq⟩ := p.exists_modelType_realized_completeType
   aesop
 
+def toCompleteType (p : T.PartialType α) (hp : IsMax p) : T.CompleteType α :=
+  ⟨p.toTheory, p.subset_toTheory, ⟨p.isSatisfiable, by
+    intro φ
+    simpa using
+      (((isMax_iff_forall_mem_or_not_mem p).mp hp (Formula.equivSentence.symm φ)).imp
+        (fun h => by simpa using p.mem_toTheory_of_mem h)
+        (fun h => by simpa [Formula.equivSentence_not] using p.mem_toTheory_of_mem h))
+  ⟩⟩
+
 end PartialType
 
 end Theory
