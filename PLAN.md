@@ -1,188 +1,548 @@
-# Plan: Partial Types With Parameters in `Mathlib.ModelTheory`
+# Plan: Formalizing Stability Theory — Road to Morley's Theorem
 
 ## Overview
 
-Add model-theoretic partial types to Mathlib: satisfiable sets of formulas
-over a first-order theory, with parameter support via `withConstants`.
+This plan extends the partial-type infrastructure (Phase 1–3 of the previous plan)
+toward the formalization of classical results in stability theory, with
+**Morley's Categoricity Theorem** as the primary milestone:
 
-Design principles:
+> If a countable complete first-order theory is categorical in some uncountable
+> cardinal, then it is categorical in every uncountable cardinal.
 
-- Primary representation is a set of `L.Formula alpha`, not a closed theory.
-- Parameters handled through `L[[A]]` and `completeTheory`, matching
-  `CompleteType`, `Definable`, and `elementaryDiagram`.
-- `CompleteType` is not refactored; new API bridges to it.
+### Proof Strategy
 
-## Current State
+We follow the modern Baldwin–Lachlan route (cf. Marker Ch. 6, Tent–Ziegler Ch. 5):
 
-### Phase 1: core file — COMPLETE
+1. Build type-space topology (compact, totally disconnected, Hausdorff = Stone space).
+2. Define Morley rank via Cantor–Bendixson rank on Stone spaces.
+3. Define ω-stability; show equivalent to "Morley rank is ordinal-valued."
+4. Build saturated and atomic/prime models for ω-stable theories.
+5. Prove the Omitting Types Theorem.
+6. Develop indiscernibles and the Ehrenfeucht–Mostowski theorem.
+7. Prove: uncountably categorical ⟹ ω-stable ⟹ categorical in all uncountable κ.
 
-`Mathlib/ModelTheory/PartialTypes.lean` compiles cleanly. Contents:
+### What Mathlib Already Provides
 
-- `Theory.withSet`, `Theory.PartialType`, `SetLike` / `PartialOrder`,
-  `ofSet`, `toTheory`, `isSatisfiable`, `subset_toTheory`,
-  `mem_toTheory_of_mem`.
-- `reductModelType`, `isRealizedIn_reductModelType` (constructive bridge
-  from models of `p.toTheory` to realizers).
-- `RealizedBy`, `IsRealizedIn`, `exists_modelType_isRealizedIn`.
-- Compactness characterizations: `partialType_iff_finitelyRealizable`,
-  `partialType_completeTheory_iff_finitelyRealizable`,
-  `partialTypeOver_iff_finitelyRealizable`.
-- `PartialTypeOver` (abbrev over `completeTheory`).
-- Parameter transport: `mapSet`, `partialType_completeTheory_map`,
-  `liftSet`, `partialTypeOver_mono`, `liftParams`.
-- `partialTypeOver_iff_realizedIn_elementaryExtension` (Phase 3 intermediate).
+| Concept | Mathlib Location |
+|---|---|
+| `CompleteType`, `typeOf`, `realizedTypes` | `Mathlib.ModelTheory.Types` |
+| Stone topology (`TotallySeparatedSpace`, `isClopen_typesWith`, `IsTopologicalBasis`) | `Mathlib.ModelTheory.Topology.Types` |
+| `Cardinal.Categorical`, Łoś–Vaught test | `Mathlib.ModelTheory.Satisfiability` |
+| Compactness theorem | `Mathlib.ModelTheory.Satisfiability` |
+| Downward Löwenheim–Skolem | `Mathlib.ModelTheory.Skolem` |
+| Upward Löwenheim–Skolem | `Mathlib.ModelTheory.Satisfiability` |
+| Definable sets (`Definable`, `DefinableSet`) | `Mathlib.ModelTheory.Definability` |
+| Elementary embeddings/substructures | `Mathlib.ModelTheory.ElementaryMaps/Substructures` |
+| Direct limits | `Mathlib.ModelTheory.DirectLimit` |
+| Fraïssé limits | `Mathlib.ModelTheory.Fraisse` |
+| DLO, ℵ₀-categoricity of DLO | `Mathlib.ModelTheory.Order` |
+| `derivedSet`, `Perfect`, `Preperfect`, `AccPt` | `Mathlib.Topology.DerivedSet`, `Mathlib.Topology.Perfect` |
+| Alexander's subbasis theorem (`isCompact_generateFrom`) | `Mathlib.Topology.Compactness.Compact` |
+| `PartialType`, `PartialTypeOver`, bridge to `CompleteType` | This project (current) |
 
-### Phase 2: CompleteType bridge — NOT STARTED
+### What Needs to Be Built
 
-### Phase 3: elementary embedding formulation — INTERMEDIATE ONLY
-
-Has the iff with `ModelType (L.elementaryDiagram M)` but not the final
-statement with `↪ₑ`.
-
----
-
-## Phase 2: Bridge To `CompleteType`
-
-**This is the immediate priority.** It resolves the TODO in both
-`Types.lean` and `PartialTypes.lean`.
-
-All additions go in `Mathlib/ModelTheory/Types.lean` (which will import
-`PartialTypes.lean`). No changes to `PartialTypes.lean`.
-
-### `CompleteType.toPartialType`
-
-```lean
-def CompleteType.toPartialType (p : T.CompleteType alpha) : T.PartialType alpha
-```
-
-Underlying set: `{phi | Formula.equivSentence phi ∈ (p : L[[alpha]].Theory)}`.
-Satisfiability: the induced `withSet` theory is a subtheory of `p`, which is
-satisfiable by `p.isMaximal.1`.
-
-### Membership bridge
-
-```lean
-theorem CompleteType.mem_toPartialType
-    (p : T.CompleteType alpha) {phi : L.Formula alpha} :
-    phi ∈ p.toPartialType ↔ Formula.equivSentence phi ∈ p
-```
-
-Definitional; this mediates between `SetLike` for `L.Formula alpha`
-(on `PartialType`) and `SetLike` for `L[[alpha]].Sentence` (on `CompleteType`).
-
-### Subset helper
-
-```lean
-theorem CompleteType.toPartialType_toTheory_subset
-    (p : T.CompleteType alpha) :
-    p.toPartialType.toTheory ⊆ (p : L[[alpha]].Theory)
-```
-
-Follows from `p.subset'` (for the `onTheory T` part) and `mem_toPartialType`
-(for the `equivSentence` image part).
-
-### Extension to complete type
-
-```lean
-theorem PartialType.exists_modelType_realized_completeType
-    (p : T.PartialType alpha) :
-    ∃ M : Theory.ModelType T, ∃ q ∈ T.realizedTypes M alpha,
-      (p : Set (L.Formula alpha)) ⊆ q.toPartialType
-```
-
-Proof:
-
-1. `p.exists_modelType_isRealizedIn` gives `M` and `v : alpha → M` with
-   `p.RealizedBy v`.
-2. Let `q := T.typeOf v`. Then `q ∈ T.realizedTypes M alpha` by definition.
-3. For `phi ∈ p`: `phi.Realize v` (from `RealizedBy`), so
-   `Formula.equivSentence phi ∈ T.typeOf v` (by `formula_mem_typeOf`), so
-   `phi ∈ q.toPartialType` (by `mem_toPartialType`).
-
-Derive the simpler form by forgetting the model:
-
-```lean
-theorem PartialType.exists_le_completeType (p : T.PartialType alpha) :
-    ∃ q : T.CompleteType alpha, (p : Set (L.Formula alpha)) ⊆ q.toPartialType
-```
-
-### Compatibility with `typeOf`
-
-```lean
-theorem CompleteType.realizedBy_typeOf (v : alpha → M) :
-    (T.typeOf v).toPartialType.RealizedBy v
-```
-
-Direct from `mem_toPartialType` and `formula_mem_typeOf`.
+- `CompactSpace (CompleteType T α)` (Phase 1)
+- Cantor–Bendixson rank (transfinite iterated derived sets) (Phase 2)
+- Morley rank, Morley degree (Phase 3)
+- ω-stability (Phase 3)
+- Saturated models (Phase 4)
+- Atomic / prime models (Phase 4)
+- Omitting Types Theorem (Phase 5)
+- Indiscernibles & Ehrenfeucht–Mostowski (Phase 6)
+- Morley's Theorem (Phase 7)
 
 ---
 
-## Phase 3: Elementary Extension Realization
+## Phase 0: Cleanup of Previous Plan
 
-Not blocking the first merge.
+**Status: IN PROGRESS**
 
-### Current intermediate result
+Complete the remaining items from the previous plan:
 
-`partialTypeOver_iff_realizedIn_elementaryExtension` gives an iff between
-consistency of a parameterized formula set and realizability in some
-`N : ModelType (L.elementaryDiagram M)`, with formulas transported along
-`(↑) : A → M` via `lhomWithConstantsMap`.
+- [ ] Finish Phase 3: state the elementary extension realization theorem with `M ↪ₑ[L] N`.
+- [ ] Verify all files compile cleanly with `lake build`.
 
-### Target
-
-```lean
-theorem PartialTypeOver.exists_elementaryExtension_realizing
-    {A : Set M} (p : PartialTypeOver (L := L) A alpha) :
-    ∃ N : Bundled L.Structure, ∃ e : M ↪ₑ[L] N, ∃ v : alpha → N,
-      ∀ phi ∈ p,
-        ((L.lhomWithConstantsMap (fun a : A => e a)).onFormula phi).Realize v
-```
-
-### Route
-
-1. Forward direction of the intermediate iff gives
-   `N : ModelType (L.elementaryDiagram M)` and `v`.
-2. `ElementaryEmbedding.ofModelsElementaryDiagram` extracts `e : M ↪ₑ[L] N`.
-3. Verify the composition `A → M → N` via `e` matches the
-   `lhomWithConstantsMap ((↑) : A → M)` reduct on `N`.
+**Files:** `StabilityTheory/ModelTheory/PartialTypes.lean`
 
 ---
 
-## Risks
+## Phase 1: Stone Space — Compactness of the Type Space
 
-1. **Circular imports**: `PartialTypes.lean` must not import `Types.lean`.
-   Bridge goes in `Types.lean`.
-2. **Membership semantics**: `PartialType` is `SetLike` for `L.Formula alpha`;
-   `CompleteType` is `SetLike` for `L[[alpha]].Sentence`.
-   `mem_toPartialType` bridges them via `equivSentence`.
-3. **Universes**: existence theorems produce models in
-   `Type (max u v w)`. Keep annotations explicit.
-4. **Scope creep**: Phase 3 is optional. First PR = Phase 1 + Phase 2.
+**Goal:** Establish that `CompleteType T α` is a Stone space (compact, Hausdorff, totally
+disconnected). Mathlib already gives `TotallySeparatedSpace`; the missing piece is
+`CompactSpace`.
 
-## Out Of Scope
+### 1.1 `CompactSpace (CompleteType T α)`
 
-Topology, isolation, saturation, omitting types, `RealizedBy ↔ Model`
-iff, refactoring `CompleteType` in terms of `PartialType`.
+```lean
+instance : CompactSpace (CompleteType T α)
+```
 
-## Verification
+**Proof route:** Use Alexander's subbasis theorem (`compactSpace_of_generateFrom`
+from Mathlib). The topology on `CompleteType T α` is generated by `range typesWith`.
+Given a cover by subbasis elements `typesWith φ_i`, their union is `univ` iff no
+complete type avoids all `φ_i`. This is equivalent to the theory
+`T ∪ {¬φ_i | i}` being unsatisfiable. By compactness (first-order), a finite
+subcover exists.
 
-1. `lake env lean Mathlib/ModelTheory/PartialTypes.lean`
-2. `lake env lean Mathlib/ModelTheory/Types.lean`
-3. No existing `CompleteType` declaration names change.
-4. `lake build` before PR.
+### 1.2 `T2Space` (Hausdorff)
+
+```lean
+instance : T2Space (CompleteType T α)
+```
+
+Follows automatically: `TotallySeparatedSpace` → `TotallyDisconnectedSpace` →
+`T1Space`, and compact + T1 → T2 (or derive directly from
+`TotallySeparatedSpace`).
+
+### 1.3 Supporting lemmas
+
+- `CompleteType.isCompact_typesWith`: each basic clopen `typesWith φ` is compact.
+- `CompleteType.continuous_typeOf`: the map `(α → M) → CompleteType T α` induced
+  by `typeOf` is continuous (w.r.t. product topology on `α → M`).
+- Reformulations: `typesWith` as `Closeds`, as `Clopens`.
+
+**Files:** `StabilityTheory/ModelTheory/Topology/Types.lean` (new file, imports
+Mathlib topology + our Types.lean)
+
+**Milestone:** `CompleteType T α` is formally a Stone space.
+
+---
+
+## Phase 2: Cantor–Bendixson Rank
+
+**Goal:** Define transfinite iterated derived sets and the Cantor–Bendixson rank in
+general topology. This is purely topological and not specific to model theory.
+
+### 2.1 Iterated derived sets
+
+```lean
+/-- The α-th iterated derived set. -/
+def iteratedDerivedSet (s : Set X) : Ordinal → Set X
+```
+
+Defined by transfinite recursion:
+- `iteratedDerivedSet s 0 = s`
+- `iteratedDerivedSet s (α + 1) = derivedSet (iteratedDerivedSet s α)`
+- `iteratedDerivedSet s λ = ⋂ α < λ, iteratedDerivedSet s α` (limit)
+
+### 2.2 Perfect kernel
+
+```lean
+/-- The perfect kernel of s is the intersection of all iterated derived sets. -/
+def perfectKernel (s : Set X) : Set X := ⋂ α, iteratedDerivedSet s α
+```
+
+**Key theorem:** In a compact T1 space, the transfinite iteration stabilizes, and
+`perfectKernel s` is a perfect set (or empty).
+
+### 2.3 Cantor–Bendixson rank
+
+```lean
+/-- The CB rank of a point x ∈ s, if it exists. -/
+noncomputable def cbRank (s : Set X) (x : X) : WithTop Ordinal
+```
+
+`cbRank s x = α` iff `x ∈ iteratedDerivedSet s α` but `x ∉ iteratedDerivedSet s (α+1)`.
+Points in the perfect kernel have rank `⊤`.
+
+### 2.4 Cantor–Bendixson theorem
+
+```lean
+theorem cantor_bendixson [CompactSpace X] [T1Space X] (s : Set X) (hs : IsClosed s) :
+    ∃ P I, Perfect P ∧ Set.Countable I ∧ s = P ∪ I ∧ Disjoint P I
+```
+
+Every closed set in a compact T1 space decomposes uniquely into a perfect part and
+a countable scattered part.
+
+**Files:** `StabilityTheory/Topology/CantorBendixson.lean` (new file, pure topology)
+
+**Milestone:** Cantor–Bendixson decomposition theorem.
+
+---
+
+## Phase 3: Morley Rank and ω-Stability
+
+**Goal:** Define Morley rank as the CB rank on the type space, define ω-stability,
+and prove their basic properties.
+
+### 3.1 Morley rank of a formula
+
+```lean
+/-- The Morley rank of a formula φ is the CB rank of typesWith φ
+    in the Stone space S_n(T). -/
+noncomputable def morleyRank (φ : L[[α]].Sentence) : WithTop Ordinal :=
+  cbRank (typesWith φ) ...
+```
+
+Alternatively, define directly via the recursive characterization:
+- `MR(φ) ≥ 0` iff `typesWith φ ≠ ∅` (i.e., `T ∪ {φ}` is satisfiable)
+- `MR(φ) ≥ α + 1` iff there exist infinitely many pairwise inconsistent
+  `ψ_i` with `MR(φ ∧ ψ_i) ≥ α`
+- `MR(φ) ≥ λ` (limit) iff `MR(φ) ≥ α` for all `α < λ`
+
+### 3.2 Morley degree
+
+```lean
+/-- The Morley degree of φ is the number of types of maximal Morley rank
+    in typesWith φ. -/
+noncomputable def morleyDegree (φ : L[[α]].Sentence) : ℕ∞
+```
+
+When `morleyRank φ < ⊤`, the Morley degree is finite.
+
+### 3.3 ω-Stability
+
+```lean
+/-- A theory T is ω-stable if for every countable model M and every
+    countable parameter set A, the type space S_n(A) is countable. -/
+def IsOmegaStable (T : L.Theory) : Prop :=
+  ∀ (M : T.ModelType) (A : Set M), A.Countable →
+    ∀ n : ℕ, Set.Countable ((L.completeTheory M).CompleteType (Fin n))
+    -- or: Cardinal.mk (S_n(A)) ≤ ℵ₀
+```
+
+### 3.4 Key equivalences
+
+```lean
+/-- A countable complete theory is ω-stable iff every formula has
+    ordinal-valued Morley rank. -/
+theorem omegaStable_iff_morleyRank_lt_top [T.IsComplete] [Countable L] :
+    T.IsOmegaStable ↔ ∀ (φ : L.Sentence), morleyRank φ < ⊤
+```
+
+### 3.5 Basic properties of Morley rank
+
+- Monotonicity: `T ⊨ φ → ψ` implies `morleyRank φ ≤ morleyRank ψ`
+- Finite cover: `morleyRank (φ ∨ ψ) = max (morleyRank φ) (morleyRank ψ)`
+- Negation: `morleyRank φ < ⊤ ∨ morleyRank (¬φ) < ⊤` when `morleyRank ⊤ < ⊤`
+- Definability of Morley rank (for ω-stable theories)
+
+**Files:** `StabilityTheory/ModelTheory/MorleyRank.lean`,
+`StabilityTheory/ModelTheory/OmegaStable.lean`
+
+**Milestone:** `IsOmegaStable` definition + equivalence with ordinal-valued Morley rank.
+
+---
+
+## Phase 4: Saturated and Atomic Models
+
+**Goal:** Define κ-saturated, atomic, and prime models. Prove existence and
+uniqueness results, especially for ω-stable theories.
+
+### 4.1 κ-Saturated models
+
+```lean
+/-- M is κ-saturated if every partial type over a parameter set of size < κ
+    is realized in M. -/
+def IsSaturated (κ : Cardinal) (M : T.ModelType) : Prop :=
+  ∀ (A : Set M), Cardinal.mk A < κ →
+    ∀ p : PartialTypeOver (L := L) A α, p.IsRealizedIn M
+```
+
+### 4.2 Existence of saturated models
+
+```lean
+/-- For ω-stable T, saturated models exist in every infinite cardinal ≥ |L|. -/
+theorem IsOmegaStable.exists_saturated_modelType (hT : T.IsOmegaStable) (κ : Cardinal)
+    (hκ : Cardinal.mk L ≤ κ) (hκ' : ℵ₀ ≤ κ) :
+    ∃ M : T.ModelType, IsSaturated κ M ∧ Cardinal.mk M = κ
+```
+
+### 4.3 Uniqueness of saturated models
+
+```lean
+/-- Saturated models of the same cardinality are isomorphic. -/
+theorem IsSaturated.equiv_of_card_eq (hM : IsSaturated κ M) (hN : IsSaturated κ N)
+    (hMκ : Cardinal.mk M = κ) (hNκ : Cardinal.mk N = κ) (hκ : ℵ₀ ≤ κ) :
+    Nonempty (M ≃[L] N)
+```
+
+### 4.4 Atomic models
+
+```lean
+/-- A model M is atomic if every finite tuple satisfies an isolated formula. -/
+def IsAtomic (M : T.ModelType) : Prop :=
+  ∀ (n : ℕ) (v : Fin n → M), (T.typeOf v).toPartialType.IsIsolated
+```
+
+Where `IsIsolated` means the corresponding type is an isolated point in the Stone
+topology.
+
+### 4.5 Prime models
+
+```lean
+/-- M is prime if it elementarily embeds into every model of T. -/
+def IsPrime (M : T.ModelType) : Prop :=
+  ∀ N : T.ModelType, Nonempty (M ↪ₑ[L] N)
+```
+
+### 4.6 Key results
+
+- Atomic ↔ prime (for countable complete theories).
+- In ω-stable theories, prime models exist (over any set of parameters).
+- Uniqueness of prime models (up to isomorphism over parameters).
+
+**Files:** `StabilityTheory/ModelTheory/Saturated.lean`,
+`StabilityTheory/ModelTheory/Atomic.lean`
+
+**Milestone:** Existence and uniqueness of saturated models for ω-stable theories.
+
+---
+
+## Phase 5: Omitting Types Theorem
+
+**Goal:** Prove the Omitting Types Theorem, needed for constructing countable models
+that omit non-isolated types.
+
+### 5.1 Statement
+
+```lean
+/-- A countable complete theory can omit any non-isolated type in a countable model. -/
+theorem omitting_types [Countable L] (hT : T.IsComplete) (hsat : T.IsSatisfiable)
+    (Γ : Set (L.Formula (Fin n))) (hΓ : ¬ ∃ φ, (typesWith (equivSentence φ)).IsIsolatedIn
+      (typesWith Γ)) :
+    ∃ M : T.ModelType, Countable M ∧ ¬ Γ.IsRealizedIn M
+```
+
+### 5.2 Proof route
+
+The standard proof uses a Henkin-style construction: build a chain of finite
+extensions of the language with witnesses, at each step ensuring that every formula
+in Γ is avoided by some witness.
+
+**Files:** `StabilityTheory/ModelTheory/OmittingTypes.lean`
+
+**Milestone:** Omitting Types Theorem.
+
+---
+
+## Phase 6: Indiscernibles and Ehrenfeucht–Mostowski
+
+**Goal:** Develop indiscernible sequences and the EM theorem, needed to prove
+"uncountably categorical ⟹ ω-stable."
+
+### 6.1 Indiscernible sequences
+
+```lean
+/-- A sequence (a_i)_{i ∈ I} in M is indiscernible over A if for any two
+    increasing tuples i₁ < ... < iₙ and j₁ < ... < jₙ from I,
+    tp(a_{i₁},...,a_{iₙ}/A) = tp(a_{j₁},...,a_{jₙ}/A). -/
+def IsIndiscernible [LinearOrder ι] (a : ι → M) (A : Set M) : Prop :=
+  ∀ (n : ℕ) (s t : Fin n ↪o ι),
+    T.typeOf (a ∘ s) = T.typeOf (a ∘ t)
+```
+
+### 6.2 Ramsey's theorem (infinite version)
+
+Mathlib has Hindman's theorem but may not have the infinite Ramsey theorem in the
+form we need. We may need:
+
+```lean
+/-- Infinite Ramsey theorem: for any finite coloring of n-element subsets of ℕ,
+    there is an infinite monochromatic set. -/
+theorem ramsey_infinite (n k : ℕ) (f : Finset.powersetCard n (Finset.range m) → Fin k) :
+    ∃ S : Set ℕ, S.Infinite ∧ ∃ c, ∀ t ∈ S.powersetCard n, f t = c
+```
+
+### 6.3 Ehrenfeucht–Mostowski theorem
+
+```lean
+/-- For any infinite linear order I and any theory T with infinite models,
+    there exists a model of T containing an indiscernible sequence indexed by I. -/
+theorem ehrenfeucht_mostowski [Infinite ι] [LinearOrder ι] (hT : T.IsSatisfiable) :
+    ∃ (M : T.ModelType) (a : ι → M), IsIndiscernible a ∅
+```
+
+### 6.4 Stretching lemma
+
+Given a model with an indiscernible sequence indexed by one linear order, we can
+"stretch" it to any other linear order of the same order type (or larger),
+preserving the theory.
+
+**Files:** `StabilityTheory/ModelTheory/Indiscernibles.lean`,
+`StabilityTheory/Combinatorics/Ramsey.lean` (if needed)
+
+**Milestone:** Ehrenfeucht–Mostowski theorem.
+
+---
+
+## Phase 7: Morley's Categoricity Theorem
+
+**Goal:** Prove Morley's theorem.
+
+### 7.1 Uncountably categorical ⟹ ω-stable
+
+```lean
+theorem Categorical.isOmegaStable (hT : T.IsComplete) [Countable L]
+    (κ : Cardinal) (hκ : ℵ₁ ≤ κ) (hcat : κ.Categorical T) :
+    T.IsOmegaStable
+```
+
+**Proof sketch:**
+1. Suppose T is not ω-stable. Then for some countable A, S₁(A) is uncountable.
+2. By Cantor–Bendixson, S₁(A) has a perfect subset, hence |S₁(A)| ≥ 2^ℵ₀.
+3. Using Ehrenfeucht–Mostowski, build 2^κ many non-isomorphic models of size κ
+   (for any uncountable κ), contradicting κ-categoricity.
+
+### 7.2 ω-stable + uncountably categorical ⟹ categorical in all uncountable κ
+
+```lean
+theorem IsOmegaStable.categorical_of_categorical (hT : T.IsComplete) [Countable L]
+    (hω : T.IsOmegaStable)
+    (κ₀ : Cardinal) (hκ₀ : ℵ₁ ≤ κ₀) (hcat : κ₀.Categorical T) :
+    ∀ κ, ℵ₁ ≤ κ → κ.Categorical T
+```
+
+**Proof sketch:**
+1. For ω-stable T, saturated models of each uncountable cardinality exist and are
+   unique (Phase 4).
+2. An uncountably categorical theory has a unique model of size κ₀, which must be
+   the saturated model.
+3. Therefore every uncountable model is saturated, so models of each uncountable
+   cardinality are unique.
+
+### 7.3 Full statement
+
+```lean
+/-- **Morley's Categoricity Theorem**: If a countable complete theory is categorical
+    in some uncountable cardinal, then it is categorical in every uncountable
+    cardinal. -/
+theorem morley_categoricity (hT : T.IsComplete) [Countable L]
+    (κ : Cardinal) (hκ : ℵ₁ ≤ κ) (hcat : κ.Categorical T) :
+    ∀ μ, ℵ₁ ≤ μ → μ.Categorical T :=
+  (hcat.isOmegaStable hT κ hκ).categorical_of_categorical hT κ hκ hcat
+```
+
+**Files:** `StabilityTheory/ModelTheory/Morley.lean`
+
+**Milestone:** Morley's Categoricity Theorem. 🏆
+
+---
+
+## Dependency Graph
+
+```
+Phase 0 (Cleanup)
+  │
+  v
+Phase 1 (Stone Space: CompactSpace)
+  │
+  ├──────────────────────┐
+  v                      v
+Phase 2 (CB Rank)    Phase 4 (Saturated/Atomic)
+  │                      │
+  v                      │
+Phase 3 (Morley Rank) ◄──┘
+  │        ω-stability
+  │
+  ├──────────────────────┐
+  v                      v
+Phase 5 (Omitting Types) Phase 6 (Indiscernibles/EM)
+  │                      │
+  └──────────┬───────────┘
+             v
+       Phase 7 (Morley's Theorem)
+```
+
+Phases 2 and 4 can proceed in parallel after Phase 1.
+Phases 5 and 6 can proceed in parallel after Phase 3.
+
+---
+
+## Suggested File Structure
+
+```
+StabilityTheory/
+  ModelTheory/
+    Syntax.lean                   (existing)
+    Semantics.lean                (existing)
+    PartialTypes.lean             (existing)
+    Types.lean                    (existing)
+    Topology/
+      Types.lean                  (Phase 1: CompactSpace, Stone space)
+    CantorBendixson.lean          (Phase 2: CB rank, general topology)
+    MorleyRank.lean               (Phase 3: Morley rank, degree)
+    OmegaStable.lean              (Phase 3: ω-stability)
+    Saturated.lean                (Phase 4: κ-saturated models)
+    Atomic.lean                   (Phase 4: atomic, prime models)
+    OmittingTypes.lean            (Phase 5)
+    Indiscernibles.lean           (Phase 6: indiscernibles, EM)
+    Morley.lean                   (Phase 7: Morley's theorem)
+  Combinatorics/
+    Ramsey.lean                   (Phase 6: if Mathlib is insufficient)
+```
+
+---
+
+## Risks and Mitigations
+
+1. **Universe polymorphism:** Cardinal arguments (Löwenheim–Skolem, counting types)
+   require careful universe management. Mathlib's `Cardinal.Categorical` lives in
+   a specific universe; ensure compatibility.
+
+2. **Cantor–Bendixson in Lean:** Mathlib has `derivedSet` and `Perfect` but not
+   transfinite iteration. Building ordinal-indexed iterations requires careful
+   handling of `Ordinal` recursion.
+
+3. **Compactness of `CompleteType`:** The proof via Alexander's subbasis theorem
+   requires connecting first-order compactness to the topological statement.
+   The key step is showing that a cover by `typesWith`-sets corresponds to
+   unsatisfiability of a theory.
+
+4. **Ramsey's theorem:** Mathlib has Hindman's theorem but possibly not the finite
+   or infinite Ramsey theorem in the partition-regular form needed for EM. May
+   need a standalone development.
+
+5. **Size of the project:** The full road to Morley's theorem is substantial.
+   Each phase produces independently useful formalizations that could be
+   contributed to Mathlib separately.
+
+---
+
+## Intermediate Milestones (Publishable Results)
+
+These are self-contained results that are valuable before the full Morley's theorem:
+
+1. **Stone space structure** (Phase 1): `CompactSpace` + `T2Space` for `CompleteType`.
+   Directly contributes to Mathlib's `ModelTheory.Topology.Types`.
+
+2. **Cantor–Bendixson decomposition** (Phase 2): Pure topology, useful beyond
+   model theory. Could go in `Mathlib.Topology.CantorBendixson`.
+
+3. **Omitting Types Theorem** (Phase 5): A fundamental theorem of model theory,
+   independent of stability.
+
+4. **Ryll-Nardzewski Theorem** (bonus): ℵ₀-categoricity ↔ finitely many n-types
+   for all n. Uses the Stone space and the Omitting Types Theorem. A natural
+   milestone after Phases 1 and 5.
+
+5. **Ehrenfeucht–Mostowski Theorem** (Phase 6): Fundamental construction technique,
+   useful for many results beyond Morley's theorem.
+
+---
 
 ## TODO List
 
-- [x] Finish Phase 1 in `Mathlib/ModelTheory/PartialTypes.lean`.
-- [ ] Add `CompleteType.toPartialType` in `Mathlib/ModelTheory/Types.lean`.
-- [ ] Prove `CompleteType.mem_toPartialType`.
-- [ ] Prove `CompleteType.toPartialType.toTheory ⊆ (p : L[[alpha]].Theory)`.
-- [ ] Prove `PartialType.exists_modelType_realized_completeType`.
-- [ ] Derive `PartialType.exists_le_completeType`.
-- [ ] Prove `CompleteType.realizedBy_typeOf`.
-- [ ] Keep the bridge in `Types.lean` only; do not introduce a circular import with `PartialTypes.lean`.
-- [ ] Preserve existing `CompleteType` declaration names.
-- [ ] If time permits, finish the Phase 3 theorem using `M ↪ₑ[L] N`.
-- [ ] Verify with `lake env lean Mathlib/ModelTheory/PartialTypes.lean`.
-- [ ] Verify with `lake env lean Mathlib/ModelTheory/Types.lean`.
-- [ ] Run `lake build` before opening a PR.
+- [ ] Phase 0: Finish Phase 3 elementary embedding formulation.
+- [ ] Phase 0: Verify `lake build`.
+- [ ] Phase 1: Prove `CompactSpace (CompleteType T α)`.
+- [ ] Phase 1: Derive `T2Space (CompleteType T α)`.
+- [ ] Phase 1: Prove supporting lemmas (`isCompact_typesWith`, etc.).
+- [ ] Phase 2: Define `iteratedDerivedSet` and `cbRank`.
+- [ ] Phase 2: Prove the Cantor–Bendixson decomposition theorem.
+- [ ] Phase 3: Define `morleyRank` and `morleyDegree`.
+- [ ] Phase 3: Define `IsOmegaStable`.
+- [ ] Phase 3: Prove `omegaStable_iff_morleyRank_lt_top`.
+- [ ] Phase 4: Define `IsSaturated`, `IsAtomic`, `IsPrime`.
+- [ ] Phase 4: Prove existence/uniqueness of saturated models for ω-stable theories.
+- [ ] Phase 4: Prove atomic ↔ prime for countable complete theories.
+- [ ] Phase 5: Prove the Omitting Types Theorem.
+- [ ] Phase 6: Define `IsIndiscernible`.
+- [ ] Phase 6: Prove the Ehrenfeucht–Mostowski theorem.
+- [ ] Phase 6: Prove Ramsey's theorem if needed.
+- [ ] Phase 7: Prove uncountably categorical ⟹ ω-stable.
+- [ ] Phase 7: Prove ω-stable + uncountably categorical ⟹ categorical in all uncountable κ.
+- [ ] Phase 7: State and prove `morley_categoricity`.
