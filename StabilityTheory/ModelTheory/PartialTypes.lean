@@ -83,15 +83,6 @@ theorem toTheory_mono {p : T.PartialType α} {q : T.PartialType α} (h : p ≤ q
     preimage_union, Equiv.preimage_image, true_and]
   exact subset_union_of_subset_right h _
 
-/-- The reduct to `L` of a model of `p.toTheory`, viewed as a model of `T`. -/
-def reductModelType (p : T.PartialType α) (M : p.toTheory.ModelType) : T.ModelType :=
-  (M.subtheoryModel p.subset_toTheory).reduct (L.lhomWithConstants α)
-
-@[simp]
-theorem coe_reductModelType (p : T.PartialType α) (M : p.toTheory.ModelType) :
-    (p.reductModelType M : Type _) = M :=
-  rfl
-
 theorem mem_toTheory_of_mem (p : T.PartialType α) {φ : L.Formula α} (h : φ ∈ p) :
     Formula.equivSentence φ ∈ p.toTheory := by
   exact Or.inr ⟨φ, h, rfl⟩
@@ -118,6 +109,15 @@ def RealizedBy {M : Type w'} [L.Structure M] (p : T.PartialType α) (v : α → 
 def IsRealizedIn (p : T.PartialType α) (M : Type w') [L.Structure M] [M ⊨ T] [Nonempty M] :
     Prop :=
   ∃ v : α → M, p.RealizedBy v
+
+/-- The reduct to `L` of a model of `p.toTheory`, viewed as a model of `T`. -/
+def reductModelType (p : T.PartialType α) (M : p.toTheory.ModelType) : T.ModelType :=
+  (M.subtheoryModel p.subset_toTheory).reduct (L.lhomWithConstants α)
+
+@[simp]
+theorem coe_reductModelType (p : T.PartialType α) (M : p.toTheory.ModelType) :
+    (p.reductModelType M : Type _) = M :=
+  rfl
 
 /-- Every model of `p.toTheory` canonically realizes `p` after forgetting the added constants. -/
 theorem isRealizedIn_reductModelType (p : T.PartialType α) (M : p.toTheory.ModelType) :
