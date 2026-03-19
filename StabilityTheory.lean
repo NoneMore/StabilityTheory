@@ -1,2 +1,3 @@
 import StabilityTheory.Basic
+import StabilityTheory.Topology
 import StabilityTheory.ModelTheory

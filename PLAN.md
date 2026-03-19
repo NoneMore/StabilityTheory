@@ -46,10 +46,25 @@ We follow the modern Baldwin–Lachlan route (cf. Marker Ch. 6, Tent–Ziegler C
   `CompactSpace`, `T2Space`, `CompleteType.isCompact_typesWith`,
   `CompleteType.continuous_typeOf`, and closed/clopen wrappers in
   `StabilityTheory/ModelTheory/Topology/Types.lean`
+- Phase 2 Task 1 in `StabilityTheory/Topology/CantorBendixson.lean`:
+  `iteratedDerivedSet`, zero/successor/limit lemmas, antitonicity in the ordinal
+  parameter, monotonicity in the set parameter, and closedness lemmas
+- Topology integration is in place:
+  `StabilityTheory/Topology.lean` and the top-level `StabilityTheory.lean`
+  import tree both include the new topology module
+- Verification status:
+  Lean diagnostics are clean for `StabilityTheory/Topology/CantorBendixson.lean`,
+  `lake env lean StabilityTheory/Topology/CantorBendixson.lean` succeeds, and
+  the repository currently passes `lake build`
 
 ### What Still Needs to Be Built
 
-- Cantor–Bendixson rank (transfinite iterated derived sets) (Phase 2)
+- Remaining Phase 0 cleanup:
+  state the elementary-extension realization theorem with an explicit
+  `M ↪ₑ[L] N` formulation
+- Complete Phase 2:
+  `perfectKernel`, pointwise `cbRank`, Morley-rank bridge lemmas, and the
+  Cantor–Bendixson decomposition theorem
 - Morley rank, Morley degree (Phase 3)
 - ω-stability (Phase 3)
 - Saturated models (Phase 4)
@@ -66,7 +81,8 @@ We follow the modern Baldwin–Lachlan route (cf. Marker Ch. 6, Tent–Ziegler C
 
 Complete the remaining items from the previous plan:
 
-- [ ] Finish Phase 3: state the elementary extension realization theorem with `M ↪ₑ[L] N`.
+- [x] Add `partialTypeOver_iff_realizedIn_elementaryExtension`.
+- [ ] Finish by stating the elementary-extension realization theorem with `M ↪ₑ[L] N`.
 - [x] Verify all files compile cleanly with `lake build`.
 
 **Files:** `StabilityTheory/ModelTheory/PartialTypes.lean`
@@ -124,6 +140,8 @@ Mathlib topology + our Types.lean)
 
 ## Phase 2: Cantor–Bendixson Rank
 
+**Status: IN PROGRESS**
+
 **Goal:** Define transfinite iterated derived sets and the Cantor–Bendixson rank in
 general topology. This is purely topological and not specific to model theory.
 
@@ -138,6 +156,12 @@ Defined by transfinite recursion:
 - `iteratedDerivedSet s 0 = s`
 - `iteratedDerivedSet s (α + 1) = derivedSet (iteratedDerivedSet s α)`
 - `iteratedDerivedSet s λ = ⋂ α < λ, iteratedDerivedSet s α` (limit)
+
+Repository status:
+- Implemented in `StabilityTheory/Topology/CantorBendixson.lean`
+- Zero/successor/limit simplification lemmas are present
+- Antitonicity in the ordinal parameter, monotonicity in the set parameter, and
+  closedness lemmas are proved
 
 ### 2.2 Perfect kernel
 
@@ -468,6 +492,9 @@ Phases 5 and 6 can proceed in parallel after Phase 3.
 
 ```
 StabilityTheory/
+  Topology.lean                  (existing umbrella import)
+  Topology/
+    CantorBendixson.lean         (Phase 2: CB rank, general topology)
   ModelTheory/
     Syntax.lean                   (existing)
     Semantics.lean                (existing)
@@ -475,7 +502,6 @@ StabilityTheory/
     Types.lean                    (existing)
     Topology/
       Types.lean                  (Phase 1: CompactSpace, Stone space)
-    CantorBendixson.lean          (Phase 2: CB rank, general topology)
     MorleyRank.lean               (Phase 3: Morley rank, degree)
     OmegaStable.lean              (Phase 3: ω-stability)
     Saturated.lean                (Phase 4: κ-saturated models)
@@ -495,9 +521,10 @@ StabilityTheory/
    require careful universe management. Mathlib's `Cardinal.Categorical` lives in
    a specific universe; ensure compatibility.
 
-2. **Cantor–Bendixson in Lean:** Mathlib has `derivedSet` and `Perfect` but not
-   transfinite iteration. Building ordinal-indexed iterations requires careful
-   handling of `Ordinal` recursion.
+2. **Cantor–Bendixson in Lean:** Mathlib has `derivedSet` and `Perfect` but still
+   lacks a bundled Cantor–Bendixson development. This repository now has the
+   ordinal-indexed derived-set iteration; the remaining work is the perfect
+   kernel, `cbRank`, and the decomposition theorem.
 
 3. **Compactness of `CompleteType`:** The proof via Alexander's subbasis theorem
    requires connecting first-order compactness to the topological statement.
@@ -539,12 +566,16 @@ These are self-contained results that are valuable before the full Morley's theo
 
 ## TODO List
 
-- [ ] Phase 0: Finish Phase 3 elementary embedding formulation.
+- [ ] Phase 0: State the elementary-extension realization theorem with explicit `M ↪ₑ[L] N`.
+- [x] Phase 0: Add `partialTypeOver_iff_realizedIn_elementaryExtension`.
 - [x] Phase 0: Verify `lake build`.
 - [x] Phase 1: Prove `CompactSpace (CompleteType T α)`.
 - [x] Phase 1: Derive `T2Space (CompleteType T α)`.
 - [x] Phase 1: Prove supporting lemmas (`isCompact_typesWith`, etc.).
-- [ ] Phase 2: Define `iteratedDerivedSet` and `cbRank`.
+- [x] Phase 2: Define `iteratedDerivedSet` with zero/successor/limit lemmas.
+- [x] Phase 2: Prove antitone/monotone/closedness lemmas for iterated derived sets.
+- [ ] Phase 2: Define `perfectKernel` and prove containment/stabilization lemmas.
+- [ ] Phase 2: Define `cbRank` and prove membership/perfect-kernel characterizations.
 - [ ] Phase 2: Prove the Cantor–Bendixson decomposition theorem.
 - [ ] Phase 3: Define `morleyRank` and `morleyDegree`.
 - [ ] Phase 3: Define `IsOmegaStable`.

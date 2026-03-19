@@ -10,11 +10,17 @@ long-term goal of reaching Morley's Categoricity Theorem.
 - Phase 1 is complete: `CompleteType T α` is available as a Stone space, with
   compactness, Hausdorff separation, and basic topology lemmas in
   `StabilityTheory/ModelTheory/Topology/Types.lean`.
-- The next mathematical milestone is Cantor-Bendixson rank, followed by Morley rank
-  and ω-stability.
+- Phase 2 is in progress: `StabilityTheory/Topology/CantorBendixson.lean` now
+  defines `iteratedDerivedSet` together with the zero/successor/limit lemmas,
+  antitonicity in the ordinal parameter, monotonicity in the set parameter, and
+  closedness under `T1` and closedness hypotheses.
+- The remaining near-term topology work is `perfectKernel`, pointwise
+  `cbRank`, and the bridge API needed later for Morley rank on type spaces.
 
 ## Main Modules
 
+- `StabilityTheory/Topology.lean`
+- `StabilityTheory/Topology/CantorBendixson.lean`
 - `StabilityTheory/ModelTheory/Syntax.lean`
 - `StabilityTheory/ModelTheory/Semantics.lean`
 - `StabilityTheory/ModelTheory/PartialTypes.lean`
@@ -26,9 +32,3 @@ long-term goal of reaching Morley's Categoricity Theorem.
 ```bash
 lake build
 ```
-
-## Planning Docs
-
-- `PLAN.md`: full roadmap from the current infrastructure to Morley's theorem.
-- `NEXT_PHASE.md`: short-term working note for the next active phase after the
-  completed Stone-space milestone.

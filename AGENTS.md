@@ -24,6 +24,20 @@ The following environment variables are expected to be available in the shell:
 - Keep changes minimal and consistent with the surrounding Mathlib or Lean style.
 - If a Lean MCP server is configured for this repository, use it for goals, diagnostics, and code actions.
 
+## Commit Messages
+
+- Use concise English commit messages in the imperative mood.
+- Prefer the format `type(scope): summary`, with `scope` optional when it does not add useful context.
+- Use one of these types when applicable: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`.
+- Keep the subject line focused on the user-visible or codebase-relevant change, ideally within 72 characters.
+- Start the summary with a lowercase verb after the type prefix, and do not end the subject line with a period.
+- Add a commit body only when extra context is needed, such as rationale, non-obvious tradeoffs, or follow-up work.
+- For Lean changes, mention the affected module, theorem, or definition in the summary when helpful.
+- Examples:
+  - `feat(PartialType): add toCompleteType definition`
+  - `refactor(PartialType): golf isMax_iff_forall_mem_or_not_mem`
+  - `docs: add roadmap for Stone space phase`
+
 ## GitHub MCP Pull Requests
 
 - Before calling `create_pull_request`, load the pull request template from the target repository's default branch.

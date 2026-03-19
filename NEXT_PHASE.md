@@ -3,11 +3,16 @@
 This file tracks the active short-term plan: Phase 2, the Cantor-Bendixson
 development.
 
+Current snapshot:
+- Task 1 is implemented in `StabilityTheory/Topology/CantorBendixson.lean`.
+- Integration and verification are complete.
+- Tasks 2–4 remain open.
+
 ## Phase 2: Cantor-Bendixson Rank
 
 Goal:
-- [ ] Introduce a general-topology development for transfinite derived sets.
-- [ ] Keep the core API independent of model theory.
+- [x] Introduce a general-topology development for transfinite derived sets.
+- [x] Keep the core API independent of model theory.
 - [ ] Prepare the topology layer needed later for Morley rank on type spaces.
 
 Why this phase matters:
@@ -17,28 +22,30 @@ specialized to type spaces in the Morley-rank development.
 
 ## File Layout
 
-- [ ] Decide the final file path.
-      Preferred target: `StabilityTheory/Topology/CantorBendixson.lean`.
-- [ ] Decide whether to add a top-level `StabilityTheory/Topology.lean` umbrella file.
-- [ ] Keep imports minimal and topology-only where possible.
+- [x] Decide the final file path.
+      Chosen target: `StabilityTheory/Topology/CantorBendixson.lean`.
+- [x] Decide whether to add a top-level `StabilityTheory/Topology.lean` umbrella file.
+      Decision: add `StabilityTheory/Topology.lean`.
+- [x] Keep imports minimal and topology-only where possible.
+      Initial imports stay in pure topology/ordinal modules only.
 
 ## Task 1: Iterated Derived Sets
 
-- [ ] Define
+- [x] Define
 
 ```lean
 def iteratedDerivedSet (s : Set X) : Ordinal -> Set X
 ```
 
-- [ ] Use the intended transfinite recursion:
+- [x] Use the intended transfinite recursion:
       `0`, successor, and limit stages.
-- [ ] Add the basic simplification lemmas for:
+- [x] Add the basic simplification lemmas for:
       `iteratedDerivedSet s 0`,
       `iteratedDerivedSet s (succ a)`,
       and the limit case.
-- [ ] Prove antitonicity in the ordinal parameter.
-- [ ] Prove monotonicity in the set parameter.
-- [ ] Record closedness lemmas under appropriate hypotheses.
+- [x] Prove antitonicity in the ordinal parameter.
+- [x] Prove monotonicity in the set parameter.
+- [x] Record closedness lemmas under appropriate hypotheses.
 
 ## Task 2: Perfect Kernel
 
@@ -69,36 +76,38 @@ noncomputable def cbRank (s : Set X) (x : X) : WithTop Ordinal
 ## Task 4: Bridge Lemmas for Later Model-Theory Use
 
 - [ ] Identify the smallest API that Morley-rank definitions will need.
-- [ ] Avoid baking `CompleteType`-specific assumptions into the pure topology file.
+- [x] Avoid baking `CompleteType`-specific assumptions into the pure topology file.
 - [ ] If a specialized bridge file is needed later, keep it separate from the core
       Cantor-Bendixson file.
 
 ## Integration
 
-- [ ] Add the new file to the project's import tree once the location is fixed.
+- [x] Add the new file to the project's import tree once the location is fixed.
 - [ ] Reuse the Stone-space API from `StabilityTheory.ModelTheory.Topology.Types`
       without duplicating model-theoretic lemmas here.
-- [ ] Avoid touching existing model-theory files unless a clean import edge requires it.
+- [x] Avoid touching existing model-theory files unless a clean import edge requires it.
 
 ## Verification
 
-- [ ] Check the new file with Lean diagnostics during development.
-- [ ] Build the file directly once it exists.
-- [ ] Run `lake build`.
-- [ ] Confirm the repository still compiles cleanly after the new topology module is
+- [x] Check the new file with Lean diagnostics during development.
+- [x] Build the file directly once it exists.
+- [x] Run `lake build`.
+- [x] Confirm the repository still compiles cleanly after the new topology module is
       added.
 
 ## Acceptance Criteria
 
-- [ ] `iteratedDerivedSet` is defined with usable zero/successor/limit lemmas.
+- [x] `iteratedDerivedSet` is defined with usable zero/successor/limit lemmas.
 - [ ] `perfectKernel` is defined with the main containment/intersection lemmas.
 - [ ] `cbRank` is defined with the intended rank and perfect-kernel characterizations.
-- [ ] The topology development is general enough to reuse outside model theory.
-- [ ] The new file is integrated into the import tree and the repository builds cleanly.
+- [x] The topology development is general enough to reuse outside model theory.
+- [x] The new file is integrated into the import tree and the repository builds cleanly.
 
 ## Known Blockers
 
 - [ ] Finish the remaining Phase 0 cleanup item in
       `StabilityTheory/ModelTheory/PartialTypes.lean`.
-- [ ] Decide whether to introduce a top-level topology umbrella module before adding
+      Current status: `partialTypeOver_iff_realizedIn_elementaryExtension` is present,
+      but the explicit `M ↪ₑ[L] N` formulation from `PLAN.md` still appears to be open.
+- [x] Decide whether to introduce a top-level topology umbrella module before adding
       more topology files.
