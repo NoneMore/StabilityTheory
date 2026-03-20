@@ -11,11 +11,12 @@ long-term goal of reaching Morley's Categoricity Theorem.
   compactness, Hausdorff separation, and basic topology lemmas in
   `StabilityTheory/ModelTheory/Topology/Types.lean`.
 - Phase 2 is in progress: `StabilityTheory/Topology/CantorBendixson.lean` now
-  defines `iteratedDerivedSet` together with the zero/successor/limit lemmas,
-  antitonicity in the ordinal parameter, monotonicity in the set parameter, and
-  closedness under `T1` and closedness hypotheses.
-- The remaining near-term topology work is `perfectKernel`, pointwise
-  `cbRank`, and the bridge API needed later for Morley rank on type spaces.
+  defines `iteratedDerivedSet`, `perfectKernel`, and pointwise `cbRank`,
+  together with the zero/successor/limit lemmas, stabilization and
+  perfect-kernel results, and the basic rank characterizations.
+- The remaining near-term topology work is the bridge API needed later for
+  Morley rank on type spaces, together with the full Cantor-Bendixson
+  decomposition theorem.
 
 ## Main Modules
 

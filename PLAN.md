@@ -63,8 +63,7 @@ We follow the modern Baldwin–Lachlan route (cf. Marker Ch. 6, Tent–Ziegler C
   state the elementary-extension realization theorem with an explicit
   `M ↪ₑ[L] N` formulation
 - Complete Phase 2:
-  `perfectKernel`, pointwise `cbRank`, Morley-rank bridge lemmas, and the
-  Cantor–Bendixson decomposition theorem
+  Morley-rank bridge lemmas and the Cantor–Bendixson decomposition theorem
 - Morley rank, Morley degree (Phase 3)
 - ω-stability (Phase 3)
 - Saturated models (Phase 4)
@@ -170,18 +169,24 @@ Repository status:
 def perfectKernel (s : Set X) : Set X := ⋂ α, iteratedDerivedSet s α
 ```
 
-**Key theorem:** In a compact T1 space, the transfinite iteration stabilizes, and
-`perfectKernel s` is a perfect set (or empty).
+Repository status:
+- Implemented in `StabilityTheory/Topology/CantorBendixson.lean`
+- `perfectKernel_subset_iteratedDerivedSet`, `perfectKernel_mono`, and
+  `iteratedDerivedSet_stabilizes` are present
+- `perfect_perfectKernel` shows the perfect kernel is perfect for closed sets
 
 ### 2.3 Cantor–Bendixson rank
 
 ```lean
 /-- The CB rank of a point x ∈ s, if it exists. -/
-noncomputable def cbRank (s : Set X) (x : X) : WithTop Ordinal
+noncomputable def cbRank (s : Set X) (x : s) : WithTop Ordinal
 ```
 
-`cbRank s x = α` iff `x ∈ iteratedDerivedSet s α` but `x ∉ iteratedDerivedSet s (α+1)`.
-Points in the perfect kernel have rank `⊤`.
+Repository status:
+- Implemented in `StabilityTheory/Topology/CantorBendixson.lean`
+- `cbRank_le_iff`, `le_cbRank_iff`, and `cbRank_eq_iff` characterize the rank
+- `cbRank_eq_top_iff` identifies the `⊤` case with membership in the perfect kernel
+- `cbRank_mono` records monotonicity under subset inclusion
 
 ### 2.4 Cantor–Bendixson theorem
 
@@ -523,8 +528,9 @@ StabilityTheory/
 
 2. **Cantor–Bendixson in Lean:** Mathlib has `derivedSet` and `Perfect` but still
    lacks a bundled Cantor–Bendixson development. This repository now has the
-   ordinal-indexed derived-set iteration; the remaining work is the perfect
-   kernel, `cbRank`, and the decomposition theorem.
+   core ordinal-indexed derived-set iteration, perfect kernel, and pointwise
+   `cbRank`; the remaining work is the type-space bridge API and the
+   decomposition theorem.
 
 3. **Compactness of `CompleteType`:** The proof via Alexander's subbasis theorem
    requires connecting first-order compactness to the topological statement.
@@ -574,8 +580,9 @@ These are self-contained results that are valuable before the full Morley's theo
 - [x] Phase 1: Prove supporting lemmas (`isCompact_typesWith`, etc.).
 - [x] Phase 2: Define `iteratedDerivedSet` with zero/successor/limit lemmas.
 - [x] Phase 2: Prove antitone/monotone/closedness lemmas for iterated derived sets.
-- [ ] Phase 2: Define `perfectKernel` and prove containment/stabilization lemmas.
-- [ ] Phase 2: Define `cbRank` and prove membership/perfect-kernel characterizations.
+- [x] Phase 2: Define `perfectKernel` and prove containment/stabilization lemmas.
+- [x] Phase 2: Define `cbRank` and prove membership/perfect-kernel characterizations.
+- [ ] Phase 2: Package the bridge API for applying CB rank to type spaces.
 - [ ] Phase 2: Prove the Cantor–Bendixson decomposition theorem.
 - [ ] Phase 3: Define `morleyRank` and `morleyDegree`.
 - [ ] Phase 3: Define `IsOmegaStable`.

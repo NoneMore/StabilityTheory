@@ -4,9 +4,11 @@ This file tracks the active short-term plan: Phase 2, the Cantor-Bendixson
 development.
 
 Current snapshot:
-- Task 1 is implemented in `StabilityTheory/Topology/CantorBendixson.lean`.
+- Tasks 1–3 are implemented in `StabilityTheory/Topology/CantorBendixson.lean`.
 - Integration and verification are complete.
-- Tasks 2–4 remain open.
+- The remaining open work is the bridge API for later Morley-rank use on type
+  spaces, plus any follow-up convenience lemmas that become clearly necessary
+  downstream.
 
 ## Phase 2: Cantor-Bendixson Rank
 
@@ -49,29 +51,35 @@ def iteratedDerivedSet (s : Set X) : Ordinal -> Set X
 
 ## Task 2: Perfect Kernel
 
-- [ ] Define
+- [x] Define
 
 ```lean
 def perfectKernel (s : Set X) : Set X
 ```
 
-- [ ] Prove the kernel is contained in every iterated derived set.
-- [ ] Prove the stabilization/intersection lemmas needed later.
-- [ ] Under compact `T1` hypotheses, prove the kernel is perfect or isolate the exact
-      lemma statement needed downstream.
+- [x] Prove the kernel is contained in every iterated derived set.
+- [x] Prove the main stabilization lemma and use it to identify the kernel with a
+      stabilized derived set when needed.
+- [x] Prove the downstream perfection statement currently needed:
+      `perfect_perfectKernel` for closed sets.
+- [ ] Extract any additional public intersection/stabilization convenience lemmas if
+      later bridge files need a more explicit API boundary.
 
 ## Task 3: Pointwise Cantor-Bendixson Rank
 
-- [ ] Define
+- [x] Define
 
 ```lean
-noncomputable def cbRank (s : Set X) (x : X) : WithTop Ordinal
+noncomputable def cbRank (s : Set X) (x : s) : WithTop Ordinal
 ```
 
-- [ ] State the membership characterization:
+- [x] State the membership characterization:
       `cbRank s x = a` means `x` disappears exactly at stage `a + 1`.
-- [ ] State the `top` case in terms of membership in the perfect kernel.
-- [ ] Prefer statements that are usable later for `typesWith` subsets of type spaces.
+- [x] State the `top` case in terms of membership in the perfect kernel.
+- [x] Record the current basic API (`≤`, `≥`, `=`, `⊤`, monotonicity) in a form
+      usable by later topology/model-theory bridge code.
+- [ ] Add any final convenience wrapper if downstream Morley-rank definitions want
+      an API that hides the subtype witness.
 
 ## Task 4: Bridge Lemmas for Later Model-Theory Use
 
@@ -83,8 +91,8 @@ noncomputable def cbRank (s : Set X) (x : X) : WithTop Ordinal
 ## Integration
 
 - [x] Add the new file to the project's import tree once the location is fixed.
-- [ ] Reuse the Stone-space API from `StabilityTheory.ModelTheory.Topology.Types`
-      without duplicating model-theoretic lemmas here.
+- [ ] Add the follow-up bridge layer that applies the pure topology API to
+      `typesWith` subsets of type spaces without duplicating model-theoretic lemmas.
 - [x] Avoid touching existing model-theory files unless a clean import edge requires it.
 
 ## Verification
@@ -98,10 +106,11 @@ noncomputable def cbRank (s : Set X) (x : X) : WithTop Ordinal
 ## Acceptance Criteria
 
 - [x] `iteratedDerivedSet` is defined with usable zero/successor/limit lemmas.
-- [ ] `perfectKernel` is defined with the main containment/intersection lemmas.
-- [ ] `cbRank` is defined with the intended rank and perfect-kernel characterizations.
+- [x] `perfectKernel` is defined with the main containment/stabilization lemmas.
+- [x] `cbRank` is defined with the intended rank and perfect-kernel characterizations.
 - [x] The topology development is general enough to reuse outside model theory.
 - [x] The new file is integrated into the import tree and the repository builds cleanly.
+- [ ] The bridge API for Morley rank on type spaces is packaged in its own follow-up layer.
 
 ## Known Blockers
 
