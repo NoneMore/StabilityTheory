@@ -42,14 +42,13 @@ theorem iteratedDerivedSet_limit (s : Set X) {a : Ordinal} (ha : Order.IsSuccLim
     sᵈ[a] = ⋂ b : Set.Iio a, sᵈ[b] := by
   simp_all only [iteratedDerivedSet, iInter_coe_set, mem_Iio, Ordinal.limitRecOn_limit]
 
-theorem isClosed_iteratedDerivedSet [T1Space X] {s : Set X} (hs : IsClosed s) :
+theorem isClosed_iteratedDerivedSet {s : Set X} (hs : IsClosed s) :
     ∀ a, IsClosed (sᵈ[a]) := by
   intro a
   induction a using Ordinal.limitRecOn with
   | zero => simpa
   | succ a ha =>
-    simp only [iteratedDerivedSet_succ]
-    exact isClosed_derivedSet _
+    simp_all [isClosed_iff_derivedSet_subset, derivedSet_mono]
   | limit a ha ha' =>
     simp only [iteratedDerivedSet_limit s ha]
     refine isClosed_iInter ?_
