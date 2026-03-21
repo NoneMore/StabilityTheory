@@ -105,13 +105,13 @@ theorem iteratedDerivedSet_mono :
     simp only [iInter_coe_set, mem_Iio, mem_iInter] at ⊢ hx
     aesop
 
-abbrev stablizedOn (s : Set X) (a : Ordinal.{u}) : Prop :=
+abbrev stayOn (s : Set X) (a : Ordinal.{u}) : Prop :=
     ∀ b : Ordinal.{u}, a ≤ b →
     sᵈ[b] = sᵈ[a]
 
 /-- The iterated derived-set sequence eventually stabilizes. -/
-theorem iteratedDerivedSet_stabilizes {s : Set X} (hs : IsClosed s) :
-    ∃ a : Ordinal.{v}, stablizedOn s a := by
+theorem iteratedDerivedSet_stay {s : Set X} (hs : IsClosed s) :
+    ∃ a : Ordinal.{v}, stayOn s a := by
   suffices h : ∃ a : Ordinal.{v}, sᵈ[a+1] = sᵈ[a] by
     obtain ⟨a,ha⟩ := h
     refine ⟨a, ?_⟩
@@ -171,7 +171,7 @@ theorem perfectKernel_mono {s t : Set X} (hst : s ⊆ t) :
 
 theorem perfect_perfectKernel {s : Set X} (hs : IsClosed s) :
     Perfect (perfectKernel.{v} s) := by
-  obtain ⟨a,ha⟩ := iteratedDerivedSet_stabilizes hs
+  obtain ⟨a,ha⟩ := iteratedDerivedSet_stay hs
   have hkernel : perfectKernel.{v} s = sᵈ[a] := by
     refine le_antisymm (perfectKernel_subset_iteratedDerivedSet s a) ?_
     intro x hx
