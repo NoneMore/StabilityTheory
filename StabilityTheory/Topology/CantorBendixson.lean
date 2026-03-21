@@ -275,6 +275,105 @@ theorem cbRank_mono {s t : Set X} (hst : s ⊆ t) (x : s) :
     exact mem_image_of_mem WithTop.some this
   exact CompleteSemilatticeInf.sInf_le (WithTop.some '' {a | ↑x ∉ sᵈ[a + 1]}) (↑a) this
 
+section SecondCountable
+
+variable [T1Space X]
+
+/-- The pointwise Cantor-Bendixson rank, viewed as a function on ambient points of `s`. -/
+noncomputable abbrev cbRankOf (s : Set X) (x : X) (hx : x ∈ s) : WithTop Ordinal.{u} :=
+  cbRank.{u} s ⟨x, hx⟩
+
+theorem cbRankOf_eq_iff {s : Set X} (hs : IsClosed s) {x : X} (hx : x ∈ s)
+    {a : Ordinal.{u}} :
+    cbRankOf s x hx = (a : WithTop Ordinal.{u}) ↔ x ∈ sᵈ[a] ∧ x ∉ sᵈ[a + 1] := by
+  simpa [cbRankOf] using (cbRank_eq_iff.{u, v} (hs := hs) (x := ⟨x, hx⟩) (a := a))
+
+theorem exists_stage_of_mem_sdiff_perfectKernel {s : Set X} (hs : IsClosed s) {x : X}
+    (hx : x ∈ s \ perfectKernel.{u} s) :
+    ∃ a : Ordinal.{u}, x ∈ sᵈ[a] ∧ x ∉ sᵈ[a + 1] := by
+  have hne : cbRankOf s x hx.1 ≠ (⊤ : WithTop Ordinal.{u}) := by
+    intro htop
+    exact hx.2 ((cbRank_eq_top_iff.{u, v} (s := s) (x := ⟨x, hx.1⟩)).mp
+      (by simpa [cbRankOf] using htop))
+  let a : Ordinal.{u} := (cbRankOf s x hx.1).untop hne
+  have ha : (a : WithTop Ordinal.{u}) = cbRankOf s x hx.1 := by
+    simpa [a] using (WithTop.coe_untop (cbRankOf s x hx.1) hne)
+  exact ⟨a, (cbRankOf_eq_iff (s := s) hs hx.1).mp ha.symm⟩
+
+theorem exists_mem_countableBasis_isolating {s : Set X} [SecondCountableTopology X]
+    (hs : IsClosed s) {x : X} (hx : x ∈ s \ perfectKernel.{u} s) :
+    ∃ a : Ordinal.{u}, ∃ B : TopologicalSpace.countableBasis X,
+      x ∈ (B : Set X) ∧ x ∈ sᵈ[a] ∧ ((B : Set X) ∩ sᵈ[a] = {x}) := by
+  obtain ⟨a, hxa, hxna⟩ := exists_stage_of_mem_sdiff_perfectKernel hs hx
+  have hacc : ¬ AccPt x (Filter.principal (sᵈ[a])) := by
+    simpa [iteratedDerivedSet_succ', mem_derivedSet] using hxna
+  rw [accPt_iff_nhds] at hacc
+  push_neg at hacc
+  obtain ⟨U, hU, hUuniq⟩ := hacc
+  obtain ⟨V, hVU, hVopen, hxV⟩ := mem_nhds_iff.mp hU
+  obtain ⟨B, hB, hxB, hBV⟩ :=
+    (TopologicalSpace.isBasis_countableBasis X).exists_subset_of_mem_open hxV hVopen
+  refine ⟨a, ⟨⟨B, hB⟩, hxB, hxa, ?_⟩⟩
+  ext y
+  constructor
+  · intro hy
+    exact hUuniq y ⟨hVU (hBV hy.1), hy.2⟩
+  · intro hy
+    simp only [Set.mem_singleton_iff] at hy
+    subst hy
+    exact ⟨hxB, hxa⟩
+
+theorem countable_sdiff_perfectKernel {s : Set X} [SecondCountableTopology X] (hs : IsClosed s) :
+    (s \ perfectKernel.{u} s).Countable := by
+  choose stage code hcode_mem hcode_stage hcode_iso using
+    fun x : ↥(s \ perfectKernel.{u} s) =>
+      exists_mem_countableBasis_isolating (s := s) (x := x.1) hs x.2
+  have hcode_inj : Function.Injective code := by
+    intro x y hxy
+    rcases le_total (stage x) (stage y) with hstage | hstage
+    · apply Subtype.ext
+      have hy_stage : (y : X) ∈ sᵈ[stage x] :=
+        (iteratedDerivedSet_antitone hs hstage) (hcode_stage y)
+      have hy_mem : (y : X) ∈ ((code x : Set X) ∩ sᵈ[stage x]) := by
+        refine ⟨?_, hy_stage⟩
+        simpa [hxy] using hcode_mem y
+      have hy_eq : (y : X) = (x : X) := by
+        rw [hcode_iso x] at hy_mem
+        simpa using hy_mem
+      exact hy_eq.symm
+    · apply Subtype.ext
+      have hx_stage : (x : X) ∈ sᵈ[stage y] :=
+        (iteratedDerivedSet_antitone hs hstage) (hcode_stage x)
+      have hx_mem : (x : X) ∈ ((code y : Set X) ∩ sᵈ[stage y]) := by
+        refine ⟨?_, hx_stage⟩
+        simpa [hxy] using hcode_mem x
+      have hx_eq : (x : X) = (y : X) := by
+        rw [hcode_iso y] at hx_mem
+        simpa using hx_mem
+      exact hx_eq
+  haveI : Countable (TopologicalSpace.countableBasis X) :=
+    (TopologicalSpace.countable_countableBasis X).to_subtype
+  exact hcode_inj.countable.to_set
+
+theorem exists_countable_union_perfect_of_isClosed {s : Set X} [SecondCountableTopology X]
+    (hs : IsClosed s) :
+    ∃ V D : Set X, V.Countable ∧ Perfect D ∧ s = V ∪ D := by
+  refine ⟨s \ perfectKernel.{v} s, perfectKernel.{v} s,
+    countable_sdiff_perfectKernel.{v, v} hs,
+    perfect_perfectKernel hs, ?_⟩
+  ext x
+  constructor
+  · intro hx
+    by_cases hxk : x ∈ perfectKernel s
+    · exact Or.inr hxk
+    · exact Or.inl ⟨hx, hxk⟩
+  · intro hx
+    rcases hx with hx | hx
+    · exact hx.1
+    · simpa using (perfectKernel_subset_iteratedDerivedSet.{v} s (0 : Ordinal.{v}) hx)
+
+end SecondCountable
+
 end
 
 end CantorBendixson
