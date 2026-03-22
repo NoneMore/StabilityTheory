@@ -6,9 +6,9 @@ development.
 Current snapshot:
 - Tasks 1–3 are implemented in `StabilityTheory/Topology/CantorBendixson.lean`.
 - Integration and verification are complete.
-- The remaining open work is the bridge API for later Morley-rank use on type
-  spaces, plus any follow-up convenience lemmas that become clearly necessary
-  downstream.
+- The remaining open work is listed below: structural refactoring, missing
+  theorems and API, and the bridge layer for later Morley-rank use on type
+  spaces.
 
 ## Phase 2: Cantor-Bendixson Rank
 
@@ -49,6 +49,24 @@ def iteratedDerivedSet (s : Set X) : Ordinal -> Set X
 - [x] Prove monotonicity in the set parameter.
 - [x] Record closedness lemmas under appropriate hypotheses.
 
+### Task 1 follow-up: refactor onto `gfpApprox`
+
+`iteratedDerivedSet` duplicates `OrdinalApprox.gfpApprox` from
+`Mathlib.SetTheory.Ordinal.FixedPointApproximants`.  The monotone operator
+`derivedSet` on the complete lattice `Set X` fits `gfpApprox` exactly
+(antitone descent, successor = apply `f`, limit = infimum, stabilization via
+cardinality).  Refactoring would eliminate ~130 lines of hand-rolled
+recursion and reproved stabilization.
+
+- [ ] Package `derivedSet` as `Set X →o Set X` (via `derivedSet_mono`).
+- [ ] Define `iteratedDerivedSet s := gfpApprox derivedSetHom s`.
+- [ ] Delete the manual `limitRecOn` definition and the duplicated proofs of
+      `_antitone`, `_succ_subset`, and `iteratedDerivedSet_stay`; derive them
+      from `gfpApprox_antitone`, `gfpApprox_add_one`, and
+      `gfpApprox_ord_mem_fixedPoint`.
+- [ ] Verify that existing downstream lemmas (`perfectKernel`, `cbRank`, etc.)
+      still build after the refactor.
+
 ## Task 2: Perfect Kernel
 
 - [x] Define
@@ -62,8 +80,33 @@ def perfectKernel (s : Set X) : Set X
       stabilized derived set when needed.
 - [x] Prove the downstream perfection statement currently needed:
       `perfect_perfectKernel` for closed sets.
-- [ ] Extract any additional public intersection/stabilization convenience lemmas if
-      later bridge files need a more explicit API boundary.
+
+### Task 2 follow-up: missing API and theorems
+
+- [ ] Extract `perfectKernel_eq_iteratedDerivedSet` as a standalone lemma
+      (currently buried inside the proof of `perfect_perfectKernel`).
+- [ ] Add `perfectKernel_subset : perfectKernel s ⊆ s` (trivial from `_zero`).
+- [ ] Add `isClosed_perfectKernel` (intersection of closed sets).
+- [ ] Prove `perfectKernel` is the largest perfect subset of `s`:
+      any perfect `P ⊆ s` satisfies `P ⊆ perfectKernel s`.
+- [ ] Add `perfectKernel_idem : perfectKernel (perfectKernel s) = perfectKernel s`.
+- [ ] Add `perfectKernel_empty : perfectKernel ∅ = ∅`.
+- [ ] Add `perfectKernel_eq_empty_iff` (scattered-set characterization).
+
+### Task 2 follow-up: Cantor-Bendixson decomposition
+
+- [ ] Prove countability of the scattered part `s \ perfectKernel s` under
+      `SecondCountableTopology`, either independently or by connecting to
+      Mathlib's `exists_countable_union_perfect_of_isClosed`.
+- [ ] Establish that `perfectKernel s` equals the `D` in Mathlib's
+      `exists_countable_union_perfect_of_isClosed` (bridge the two approaches).
+
+### Task 2 follow-up: universe design
+
+The ordinal universe parameter `u` in `perfectKernel.{u}` is independent of
+the type universe `v`.  When `u < v` the intersection may not capture full
+stabilization.  Key theorems already pin `u = v`; document or constrain the
+definitions accordingly.
 
 ## Task 3: Pointwise Cantor-Bendixson Rank
 
@@ -78,10 +121,19 @@ noncomputable def cbRank (s : Set X) (x : s) : WithTop Ordinal
 - [x] State the `top` case in terms of membership in the perfect kernel.
 - [x] Record the current basic API (`≤`, `≥`, `=`, `⊤`, monotonicity) in a form
       usable by later topology/model-theory bridge code.
+- [ ] Add `cbRank_lt_ord_succ` (rank is bounded by `(succ #(Set X)).ord`).
+- [ ] Add `countable_setOf_cbRank_lt_top` under `SecondCountableTopology`
+      (the scattered part is countable).
 - [ ] Add any final convenience wrapper if downstream Morley-rank definitions want
       an API that hides the subtype witness.
 
-## Task 4: Bridge Lemmas for Later Model-Theory Use
+## Task 4: Proof quality clean-up
+
+- [ ] Replace the `Filter.principal_eq_iff_eq` workaround in
+      `iteratedDerivedSet_stay` (line 150) with direct set-equality extraction.
+- [ ] Change `stayOn` from `abbrev` to `def` to avoid uncontrolled unfolding.
+
+## Task 5: Bridge Lemmas for Later Model-Theory Use
 
 - [ ] Identify the smallest API that Morley-rank definitions will need.
 - [x] Avoid baking `CompleteType`-specific assumptions into the pure topology file.
@@ -110,6 +162,9 @@ noncomputable def cbRank (s : Set X) (x : s) : WithTop Ordinal
 - [x] `cbRank` is defined with the intended rank and perfect-kernel characterizations.
 - [x] The topology development is general enough to reuse outside model theory.
 - [x] The new file is integrated into the import tree and the repository builds cleanly.
+- [ ] `iteratedDerivedSet` is refactored onto `gfpApprox` (Task 1 follow-up).
+- [ ] `perfectKernel` has the full maximality/decomposition API (Task 2 follow-ups).
+- [ ] The Cantor-Bendixson decomposition is proved or connected to Mathlib's version.
 - [ ] The bridge API for Morley rank on type spaces is packaged in its own follow-up layer.
 
 ## Known Blockers
