@@ -441,6 +441,30 @@ theorem partialTypeOver_iff_realizedIn_elementaryExtension
       simpa [ψ', ψ] using hψ'
     exact (BoundedFormula.realize_restrictFreeVar vM (congrFun (id (Eq.symm hwEq)))).mp hw
 
+/-- A set of formulas with parameters from `A` is a partial type over `M` exactly when it is
+realized in a model of the elementary diagram of `M` together with an explicit elementary
+embedding `M ↪ₑ[L] N`. -/
+theorem partialTypeOver_iff_realizedIn_elementaryExtension_with_embedding
+    (S : Set (L[[A]].Formula α)) :
+    (((L[[A]].completeTheory M).withSet S).IsSatisfiable) ↔
+      ∃ N : Theory.ModelType.{max u u', v, max (max (max u u') v) w} (L.elementaryDiagram M),
+        ∃ _ : M ↪ₑ[L] N,
+          ∃ v : α → N,
+            ∀ φ ∈ S,
+              ((L.lhomWithConstantsMap ((↑) : A → M)).onFormula φ).Realize v := by
+  constructor
+  · intro hS
+    obtain ⟨N, v, hv⟩ :=
+      (partialTypeOver_iff_realizedIn_elementaryExtension
+        (L := L) (M := M) (A := A) (α := α) S).1 hS
+    haveI : (L.lhomWithConstants M).IsExpansionOn N := LHom.isExpansionOn_reduct _ _
+    let f : M ↪ₑ[L] N := ElementaryEmbedding.ofModelsElementaryDiagram (L := L) (M := M) N
+    exact ⟨N, f, v, hv⟩
+  · rintro ⟨N, _, v, hv⟩
+    exact
+      (partialTypeOver_iff_realizedIn_elementaryExtension
+        (L := L) (M := M) (A := A) (α := α) S).2 ⟨N, v, hv⟩
+
 end PartialType
 
 end Theory
