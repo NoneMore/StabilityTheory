@@ -49,23 +49,15 @@ def iteratedDerivedSet (s : Set X) : Ordinal -> Set X
 - [x] Prove monotonicity in the set parameter.
 - [x] Record closedness lemmas under appropriate hypotheses.
 
-### Task 1 follow-up: refactor onto `gfpApprox`
+### Task 1 follow-up: refactor onto `gfpApprox` — REJECTED
 
-`iteratedDerivedSet` duplicates `OrdinalApprox.gfpApprox` from
-`Mathlib.SetTheory.Ordinal.FixedPointApproximants`.  The monotone operator
-`derivedSet` on the complete lattice `Set X` fits `gfpApprox` exactly
-(antitone descent, successor = apply `f`, limit = infimum, stabilization via
-cardinality).  Refactoring would eliminate ~130 lines of hand-rolled
-recursion and reproved stabilization.
-
-- [ ] Package `derivedSet` as `Set X →o Set X` (via `derivedSet_mono`).
-- [ ] Define `iteratedDerivedSet s := gfpApprox derivedSetHom s`.
-- [ ] Delete the manual `limitRecOn` definition and the duplicated proofs of
-      `_antitone`, `_succ_subset`, and `iteratedDerivedSet_stay`; derive them
-      from `gfpApprox_antitone`, `gfpApprox_add_one`, and
-      `gfpApprox_ord_mem_fixedPoint`.
-- [ ] Verify that existing downstream lemmas (`perfectKernel`, `cbRank`, etc.)
-      still build after the refactor.
+Investigated refactoring `iteratedDerivedSet` onto `OrdinalApprox.gfpApprox`.
+The refactor is **not viable**: `gfpApprox` uses `f(prev) ⊓ prev` at successor
+steps to guarantee antitonicity for arbitrary monotone operators, so
+`gfpApprox_add_one` (which simplifies to just `f(prev)`) requires `f x ≤ x`,
+i.e., `IsClosed s`.  The current hand-rolled definition gives an unconditional
+`iteratedDerivedSet_succ` simp lemma, which is a strictly better API.  The code
+savings (~40 lines of recursion) do not justify the regression.
 
 ## Task 2: Perfect Kernel
 
@@ -162,7 +154,7 @@ noncomputable def cbRank (s : Set X) (x : s) : WithTop Ordinal
 - [x] `cbRank` is defined with the intended rank and perfect-kernel characterizations.
 - [x] The topology development is general enough to reuse outside model theory.
 - [x] The new file is integrated into the import tree and the repository builds cleanly.
-- [ ] `iteratedDerivedSet` is refactored onto `gfpApprox` (Task 1 follow-up).
+- [x] ~`iteratedDerivedSet` refactor onto `gfpApprox`~ — rejected (API regression).
 - [ ] `perfectKernel` has the full maximality/decomposition API (Task 2 follow-ups).
 - [ ] The Cantor-Bendixson decomposition is proved or connected to Mathlib's version.
 - [ ] The bridge API for Morley rank on type spaces is packaged in its own follow-up layer.
