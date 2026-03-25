@@ -42,6 +42,27 @@ theorem iteratedDerivedSet_limit (s : Set X) {a : Ordinal} (ha : Order.IsSuccLim
     sᵈ[a] = ⋂ b : Set.Iio a, sᵈ[b] := by
   simp_all only [iteratedDerivedSet, iInter_coe_set, mem_Iio, Ordinal.limitRecOn_limit]
 
+theorem iteratedDerivedSet_eq_of_perfect {s : Set X} (hs : Perfect s) :
+    ∀ a : Ordinal.{u}, sᵈ[a] = s := by
+  intro a
+  induction a using Ordinal.limitRecOn with
+  | zero => simp
+  | succ a ha =>
+    simp only [Order.succ_eq_add_one, iteratedDerivedSet_succ', ha]
+    exact (perfect_iff_eq_derivedSet.mp hs).symm
+  | limit a ha ih =>
+    rw [iteratedDerivedSet_limit s ha]
+    ext x
+    constructor
+    · intro hx
+      have h0 : x ∈ sᵈ[(0 : Ordinal.{u})] := by
+        exact (Set.mem_iInter.mp hx) ⟨0, by simpa using ha.bot_lt⟩
+      simpa using h0
+    · intro hx
+      refine Set.mem_iInter.mpr ?_
+      intro i
+      simpa [ih i.1 i.2] using hx
+
 theorem isClosed_iteratedDerivedSet {s : Set X} (hs : IsClosed s) :
     ∀ a, IsClosed (sᵈ[a]) := by
   intro a
@@ -49,7 +70,7 @@ theorem isClosed_iteratedDerivedSet {s : Set X} (hs : IsClosed s) :
   | zero => simpa
   | succ a ha =>
     simp_all [isClosed_iff_derivedSet_subset, derivedSet_mono]
-  | limit a ha ha' =>
+  | limit a ha ih =>
     simp only [iteratedDerivedSet_limit s ha]
     refine isClosed_iInter ?_
     aesop
@@ -161,12 +182,25 @@ theorem perfectKernel_subset_iteratedDerivedSet (s : Set X) (a : Ordinal.{u}) :
   rw [perfectKernel] at hx
   exact (Set.mem_iInter.mp hx) a
 
+theorem perfectKernel_subset (s : Set X) :
+    perfectKernel.{u} s ⊆ s := by
+  nth_rw 2 [← iteratedDerivedSet_zero s]
+  exact perfectKernel_subset_iteratedDerivedSet s 0
+
 theorem perfectKernel_mono {s t : Set X} (hst : s ⊆ t) :
     perfectKernel.{u} s ⊆ perfectKernel.{u} t := by
   simp only [perfectKernel]
   suffices h : ∀ o : Ordinal.{u}, sᵈ[o] ⊆ tᵈ[o] by
     exact iInter_mono'' h
   exact iteratedDerivedSet_mono hst
+
+theorem isClosed_perfectKernel {s : Set X} (hs : IsClosed s) :
+    IsClosed (perfectKernel.{u} s) :=
+  isClosed_iInter (isClosed_iteratedDerivedSet hs)
+
+@[simp] theorem perfectKernel_empty :
+    perfectKernel.{u} (∅ : Set X) = ∅ := by
+  simpa using perfectKernel_subset ∅
 
 theorem perfect_perfectKernel {s : Set X} (hs : IsClosed s) :
     Perfect (perfectKernel.{v} s) := by
@@ -183,6 +217,12 @@ theorem perfect_perfectKernel {s : Set X} (hs : IsClosed s) :
   rw [hkernel]
   refine perfect_iff_eq_derivedSet.mpr ?_
   simpa [iteratedDerivedSet_succ'] using (ha (a + 1) le_self_add).symm
+
+theorem perfectKernel_idem {s : Set X} (hs : IsClosed s) :
+    perfectKernel.{v} (perfectKernel.{v} s) = perfectKernel.{v} s := by
+  nth_rw 1 [perfectKernel]
+  exact iInter_eq_const <|
+    iteratedDerivedSet_eq_of_perfect (perfect_perfectKernel hs)
 
 /--
 The pointwise Cantor-Bendixson rank of a point of a set, with value `⊤`

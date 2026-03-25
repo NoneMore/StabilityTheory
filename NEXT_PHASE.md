@@ -7,8 +7,9 @@ Current snapshot:
 - Tasks 1–3 (iteratedDerivedSet, perfectKernel, pointwise cbRank) are
   implemented in `StabilityTheory/Topology/CantorBendixson.lean`.
 - Integration and verification are complete.
-- **Priority now shifts to completing the Cantor-Bendixson API** before moving
-  on to bridge layers or model-theory integration.
+- **P1 is complete. Priority now shifts to P2**: extract the stabilization
+  lemma and prove the maximality API before moving on to bridge layers or
+  model-theory integration.
 
 ## Phase 2: Cantor-Bendixson Rank
 
@@ -30,13 +31,14 @@ specialized to type spaces in the Morley-rank development.
 The following items are the most urgent work. They are ordered by dependency so
 that earlier items unblock later ones.
 
-### P1. perfectKernel basic API (no extra hypotheses needed)
+### P1. perfectKernel basic API — DONE
 
-- [ ] `perfectKernel_subset : perfectKernel s ⊆ s`
+- [x] `perfectKernel_subset : perfectKernel s ⊆ s`
       (trivial from `perfectKernel_subset_iteratedDerivedSet` at zero).
-- [ ] `isClosed_perfectKernel` (intersection of closed sets; needs `IsClosed s`).
-- [ ] `perfectKernel_empty : perfectKernel ∅ = ∅`.
-- [ ] `perfectKernel_idem : perfectKernel (perfectKernel s) = perfectKernel s`.
+- [x] `isClosed_perfectKernel` (intersection of closed sets; needs `IsClosed s`).
+- [x] `perfectKernel_empty : perfectKernel ∅ = ∅`.
+- [x] `perfectKernel_idem` in the closed-input form
+      `IsClosed s → perfectKernel (perfectKernel s) = perfectKernel s`.
 
 ### P2. Extract stabilization lemma and maximality
 
@@ -80,8 +82,11 @@ that earlier items unblock later ones.
 
 - [x] Define `perfectKernel` as intersection of all iterated derived sets.
 - [x] `perfectKernel_subset_iteratedDerivedSet`.
+- [x] `perfectKernel_subset`, `isClosed_perfectKernel`, `perfectKernel_empty`.
 - [x] Stabilization lemma `iteratedDerivedSet_stay`.
+- [x] `iteratedDerivedSet_eq_of_perfect`.
 - [x] `perfect_perfectKernel` for closed sets.
+- [x] `perfectKernel_idem` for closed sets.
 
 ### Task 3: Pointwise Cantor-Bendixson Rank — DONE (core only)
 
@@ -138,7 +143,8 @@ definitions accordingly.
 - [x] `cbRank` is defined with the intended rank and perfect-kernel characterizations.
 - [x] The topology development is general enough to reuse outside model theory.
 - [x] The new file is integrated into the import tree and the repository builds cleanly.
-- [ ] `perfectKernel` has the full maximality/decomposition API (P1–P2).
+- [x] `perfectKernel` has the basic API from P1.
+- [ ] `perfectKernel` has the remaining maximality API from P2.
 - [ ] Set-level CB rank is defined and connected to pointwise rank (P3).
 - [ ] The Cantor-Bendixson decomposition is proved or connected to Mathlib's version (P4).
 - [ ] The bridge API for Morley rank on type spaces is packaged in its own follow-up layer.
