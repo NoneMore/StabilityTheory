@@ -4,11 +4,11 @@ This file tracks the active short-term plan: Phase 2, the Cantor-Bendixson
 development.
 
 Current snapshot:
-- Tasks 1–3 (iteratedDerivedSet, perfectKernel, pointwise cbRank) are
-  implemented in `StabilityTheory/Topology/CantorBendixson.lean`.
-- Integration and verification are complete.
-- **P1 is complete. Priority now shifts to P2**: extract the stabilization
-  lemma and prove the maximality API before moving on to bridge layers or
+- Tasks 1–4 (iteratedDerivedSet, perfectKernel, pointwise cbRank, set-level
+  cbRank) are implemented in `StabilityTheory/Topology/CantorBendixson.lean`.
+- Integration and verification are complete for the topology-side rank API.
+- **P1–P3 are complete. Priority now shifts to P4**: scattered sets and the
+  Cantor-Bendixson decomposition, before moving on to bridge layers or
   model-theory integration.
 
 ## Phase 2: Cantor-Bendixson Rank
@@ -16,8 +16,9 @@ Current snapshot:
 Goal:
 - [x] Introduce a general-topology development for transfinite derived sets.
 - [x] Keep the core API independent of model theory.
-- [ ] **Complete the perfectKernel and CB decomposition API (current priority).**
-- [ ] Prepare the topology layer needed later for Morley rank on type spaces.
+- [x] Complete the perfectKernel maximality and set-level rank API.
+- [ ] **Complete the scattered/decomposition API (current priority).**
+- [ ] Prepare the topology bridge layer needed later for Morley rank on type spaces.
 
 Why this phase matters:
 The Stone-space API is now available. The next missing layer is the topological
@@ -40,21 +41,21 @@ that earlier items unblock later ones.
 - [x] `perfectKernel_idem` in the closed-input form
       `IsClosed s → perfectKernel (perfectKernel s) = perfectKernel s`.
 
-### P2. Extract stabilization lemma and maximality
+### P2. Extract stabilization lemma and maximality — DONE
 
-- [ ] Extract `perfectKernel_eq_iteratedDerivedSet` as a standalone lemma
-      (currently buried inside the proof of `perfect_perfectKernel`).
-- [ ] Prove `perfectKernel` is the largest perfect subset of `s`:
+- [x] Extract `perfectKernel_eq_iteratedDerivedSet` as a standalone lemma
+      (rather than burying it inside `perfect_perfectKernel`).
+- [x] Prove `perfectKernel` is the largest perfect subset of `s`:
       any perfect `P ⊆ s` satisfies `P ⊆ perfectKernel s`.
 
-### P3. Set-level CB rank
+### P3. Set-level CB rank — DONE
 
-- [ ] Define `setCBRank (s : Set X) : Ordinal` as the stabilization ordinal.
-- [ ] Relate `setCBRank` to pointwise `cbRank`:
-      `cbRank x < setCBRank s ↔ x ∉ perfectKernel s` (or similar).
-- [ ] `cbRank_lt_ord_succ` (rank is bounded by `(succ #(Set X)).ord`).
+- [x] Define `setCBRank (s : Set X) : Ordinal` as the stabilization ordinal.
+- [x] Relate `setCBRank` to pointwise `cbRank`:
+      `cbRank x < setCBRank s ↔ x ∉ perfectKernel s`.
+- [x] `cbRank_lt_ord_succ` (rank is bounded by `(succ #(Set X)).ord`).
 
-### P4. Scattered sets and Cantor-Bendixson decomposition
+### P4. Scattered sets and Cantor-Bendixson decomposition — current priority
 
 - [ ] Define `IsScattered` (no nonempty perfect subset) or characterize via
       `perfectKernel_eq_empty_iff`.
@@ -84,7 +85,10 @@ that earlier items unblock later ones.
 - [x] `perfectKernel_subset_iteratedDerivedSet`.
 - [x] `perfectKernel_subset`, `isClosed_perfectKernel`, `perfectKernel_empty`.
 - [x] Stabilization lemma `iteratedDerivedSet_stay`.
+- [x] `stayOn_of_iteratedDerivedSet_succ_eq`.
 - [x] `iteratedDerivedSet_eq_of_perfect`.
+- [x] `perfectKernel_eq_iteratedDerivedSet`.
+- [x] `subset_perfectKernel_of_perfect`.
 - [x] `perfect_perfectKernel` for closed sets.
 - [x] `perfectKernel_idem` for closed sets.
 
@@ -95,6 +99,15 @@ that earlier items unblock later ones.
 - [x] `cbRank_eq_top_iff` (membership in perfect kernel).
 - [x] `cbRank_mono`.
 
+### Task 4: Set-level Cantor-Bendixson Rank — DONE
+
+- [x] Define `setCBRank : Set X → Ordinal`.
+- [x] `setCBRank_stay`.
+- [x] `perfectKernel_eq_iteratedDerivedSet_setCBRank`.
+- [x] `setCBRank_le_ord_succ`.
+- [x] `cbRank_lt_setCBRank_iff`.
+- [x] `cbRank_lt_ord_succ`.
+
 ---
 
 ## Later Tasks (deferred until API is complete)
@@ -102,7 +115,8 @@ that earlier items unblock later ones.
 ### Task 5: Proof quality clean-up
 
 - [ ] Replace the `Filter.principal_eq_iff_eq` workaround in
-      `iteratedDerivedSet_stay` (line 150) with direct set-equality extraction.
+      `iteratedDerivedSet_stay` (currently around line 178) with direct
+      set-equality extraction.
 - [ ] Change `stayOn` from `abbrev` to `def` to avoid uncontrolled unfolding.
 
 ### Task 6: Bridge Lemmas for Model-Theory Use
@@ -144,7 +158,7 @@ definitions accordingly.
 - [x] The topology development is general enough to reuse outside model theory.
 - [x] The new file is integrated into the import tree and the repository builds cleanly.
 - [x] `perfectKernel` has the basic API from P1.
-- [ ] `perfectKernel` has the remaining maximality API from P2.
-- [ ] Set-level CB rank is defined and connected to pointwise rank (P3).
+- [x] `perfectKernel` has the remaining maximality API from P2.
+- [x] Set-level CB rank is defined and connected to pointwise rank (P3).
 - [ ] The Cantor-Bendixson decomposition is proved or connected to Mathlib's version (P4).
 - [ ] The bridge API for Morley rank on type spaces is packaged in its own follow-up layer.

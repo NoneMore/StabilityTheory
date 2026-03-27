@@ -129,32 +129,39 @@ abbrev stayOn (s : Set X) (a : Ordinal.{u}) : Prop :=
     ∀ b : Ordinal.{u}, a ≤ b →
     sᵈ[b] = sᵈ[a]
 
+/-- If the iterated derived set stops changing at a successor stage,
+it stays constant from there on. -/
+theorem stayOn_of_iteratedDerivedSet_succ_eq
+    {s : Set X} (hs : IsClosed s) {a : Ordinal.{u}}
+    (ha : sᵈ[a + 1] = sᵈ[a]) :
+    stayOn.{u} s a := by
+  intro b hab
+  induction b using Ordinal.limitRecOn with
+  | zero => aesop
+  | succ b ih =>
+    by_cases h : a ≤ b
+    · simpa [ih h] using ha
+    · suffices this : a = b + 1 by simp [this]
+      exact eq_of_ge_of_le (Order.succ_le_iff.mpr (lt_of_not_ge h)) hab
+  | limit b hb ih =>
+    rcases lt_or_eq_of_le hab with hab' | rfl
+    · apply le_antisymm
+      · exact iteratedDerivedSet_antitone hs hab
+      · rw [iteratedDerivedSet_limit s hb]
+        intro x hx
+        simp only [mem_iInter]
+        intro o
+        rcases lt_or_ge o.1 a with hoa | hao
+        · exact iteratedDerivedSet_antitone hs (le_of_lt hoa) hx
+        · simpa [ih o.1 o.2 hao] using hx
+    · rfl
+
 /-- The iterated derived-set sequence eventually stabilizes. -/
 theorem iteratedDerivedSet_stay {s : Set X} (hs : IsClosed s) :
     ∃ a : Ordinal.{v}, stayOn s a := by
   suffices h : ∃ a : Ordinal.{v}, sᵈ[a+1] = sᵈ[a] by
     obtain ⟨a,ha⟩ := h
-    refine ⟨a, ?_⟩
-    intro b hab
-    induction b using Ordinal.limitRecOn with
-    | zero => aesop
-    | succ b ih =>
-      by_cases h : a ≤ b
-      · simpa [ih h] using ha
-      · suffices this : a = b+1 by simp [this]
-        exact eq_of_ge_of_le (Order.succ_le_iff.mpr (lt_of_not_ge h)) hab
-    | limit b hb ih =>
-      rcases lt_or_eq_of_le hab with hab' | rfl
-      · apply le_antisymm
-        · exact iteratedDerivedSet_antitone hs hab
-        · rw [iteratedDerivedSet_limit s hb]
-          intro x hx
-          simp only [mem_iInter]
-          intro o
-          rcases lt_or_ge o.1 a with hoa | hao
-          · exact iteratedDerivedSet_antitone hs (le_of_lt hoa) hx
-          · simpa [ih o.1 o.2 hao] using hx
-      rfl
+    exact ⟨a, stayOn_of_iteratedDerivedSet_succ_eq hs ha⟩
   let f : Ordinal.{v} → Set X := iteratedDerivedSet s
   let κ : Ordinal.{v} := (Order.succ #(Set X)).ord
   have hni : ¬ Set.InjOn f (Set.Iio κ) :=
@@ -198,22 +205,32 @@ theorem isClosed_perfectKernel {s : Set X} (hs : IsClosed s) :
     IsClosed (perfectKernel.{u} s) :=
   isClosed_iInter (isClosed_iteratedDerivedSet hs)
 
-@[simp] theorem perfectKernel_empty :
+@[simp]
+theorem perfectKernel_empty :
     perfectKernel.{u} (∅ : Set X) = ∅ := by
   simpa using perfectKernel_subset ∅
 
+theorem perfectKernel_eq_iteratedDerivedSet {s : Set X} (hs : IsClosed s) :
+    ∃ a : Ordinal.{v}, stayOn s a ∧ perfectKernel.{v} s = sᵈ[a] := by
+  obtain ⟨a, ha⟩ := iteratedDerivedSet_stay hs
+  refine ⟨a, ha, le_antisymm (perfectKernel_subset_iteratedDerivedSet s a) ?_⟩
+  rw [perfectKernel]
+  refine Set.subset_iInter fun i x hx => ?_
+  rcases lt_or_ge i a with hi | hi
+  · exact iteratedDerivedSet_antitone hs (le_of_lt hi) hx
+  · simpa [ha i hi] using hx
+
+theorem subset_perfectKernel_of_perfect {P s : Set X}
+    (hP : Perfect P) (hPs : P ⊆ s) :
+    P ⊆ perfectKernel.{v} s := by
+  rw [perfectKernel]
+  refine Set.subset_iInter fun i x hx => ?_
+  exact (iteratedDerivedSet_mono.{v} hPs i) <| by
+    simpa [iteratedDerivedSet_eq_of_perfect hP i] using hx
+
 theorem perfect_perfectKernel {s : Set X} (hs : IsClosed s) :
     Perfect (perfectKernel.{v} s) := by
-  obtain ⟨a,ha⟩ := iteratedDerivedSet_stay hs
-  have hkernel : perfectKernel.{v} s = sᵈ[a] := by
-    refine le_antisymm (perfectKernel_subset_iteratedDerivedSet s a) ?_
-    intro x hx
-    rw [perfectKernel]
-    refine Set.mem_iInter.mpr ?_
-    intro b
-    rcases lt_or_ge b a with hba | hab
-    · exact iteratedDerivedSet_antitone hs (le_of_lt hba) hx
-    · simpa [ha b hab] using hx
+  obtain ⟨a, ha, hkernel⟩ := perfectKernel_eq_iteratedDerivedSet hs
   rw [hkernel]
   refine perfect_iff_eq_derivedSet.mpr ?_
   simpa [iteratedDerivedSet_succ'] using (ha (a + 1) le_self_add).symm
@@ -223,6 +240,66 @@ theorem perfectKernel_idem {s : Set X} (hs : IsClosed s) :
   nth_rw 1 [perfectKernel]
   exact iInter_eq_const <|
     iteratedDerivedSet_eq_of_perfect (perfect_perfectKernel hs)
+
+/-- The set-level Cantor-Bendixson rank, defined as the least stabilization stage. -/
+noncomputable def setCBRank (s : Set X) : Ordinal.{v} :=
+  sInf {a : Ordinal.{v} | stayOn.{v} s a}
+
+theorem setCBRank_stay {s : Set X} (hs : IsClosed s) :
+    stayOn.{v} s (setCBRank s) := by
+  rw [setCBRank]
+  obtain ⟨a, ha⟩ := iteratedDerivedSet_stay hs
+  exact csInf_mem (s := {a : Ordinal.{v} | stayOn.{v} s a}) ⟨a, ha⟩
+
+theorem perfectKernel_eq_iteratedDerivedSet_setCBRank {s : Set X} (hs : IsClosed s) :
+    perfectKernel.{v} s = sᵈ[setCBRank s] := by
+  obtain ⟨a, ha, ha'⟩ := perfectKernel_eq_iteratedDerivedSet hs
+  exact ha'.trans <| setCBRank_stay hs a <| by
+    rw [setCBRank]
+    exact csInf_le' ha
+
+theorem setCBRank_le_ord_succ {s : Set X} (hs : IsClosed s) :
+    setCBRank s ≤ (Order.succ #s).ord := by
+  let κ := (Order.succ #s).ord
+  change _ ≤ κ
+  by_contra! hκ
+  have hne : ∀ a : Set.Iio κ, sᵈ[↑a + 1] ≠ sᵈ[↑a] := by
+    intro a hstay
+    exact not_lt_of_gt hκ <|
+      lt_of_le_of_lt (csInf_le' (stayOn_of_iteratedDerivedSet_succ_eq hs hstay)) a.2
+  have h : ∀ a : Set.Iio κ, ((sᵈ[↑a]) \ sᵈ[↑a + 1]).Nonempty := by
+    intro a
+    exact nonempty_of_ssubset <|
+      Set.ssubset_iff_subset_ne.mpr ⟨iteratedDerivedSet_antitone hs le_self_add, hne a⟩
+  let f : Set.Iio κ → s := fun a => ⟨(h a).some, by
+    have hmem : (h a).some ∈ sᵈ[↑a] := (Set.mem_diff _).mp (h a).some_mem |>.1
+    have hsub : sᵈ[↑a] ⊆ s := by
+      simpa using
+        (iteratedDerivedSet_antitone hs (show (0 : Ordinal.{v}) ≤ ↑a from by simp))
+    exact hsub hmem⟩
+  have finj : Function.Injective f := by
+    intro a b hab
+    by_contra! hne
+    wlog hlt : a < b generalizing a b with hswap
+    · have hgt : b < a :=
+        lt_of_le_of_ne (not_lt.mp (hswap hab hne)) hne.symm
+      exact hswap hab.symm hne.symm hgt
+    · have hfb : ↑(f b) ∈ sᵈ[↑a + 1] := by
+        apply mem_of_subset_of_mem (iteratedDerivedSet_antitone hs <| by simpa using hlt)
+        change (h b).some ∈ sᵈ[↑b]
+        exact ((Set.mem_diff _).mp (h b).some_mem).1
+      rw [← hab] at hfb
+      exact ((Set.mem_diff _).mp (h a).some_mem).2 hfb
+  let g : Ordinal.{v} → s := fun a => if ha : a < κ then f ⟨a, ha⟩ else
+     f ⟨0, by simp [κ, Cardinal.lt_ord]⟩
+  exact Cardinal.not_injective_limitation_set g <| fun a ha b hb hab =>
+    by
+      change a < κ at ha
+      change b < κ at hb
+      have hab' : f ⟨a, ha⟩ = f ⟨b, hb⟩ := by
+        dsimp [g] at hab
+        rwa [dif_pos ha, dif_pos hb] at hab
+      exact congrArg Subtype.val (finj hab')
 
 /--
 The pointwise Cantor-Bendixson rank of a point of a set, with value `⊤`
@@ -314,6 +391,23 @@ theorem cbRank_mono {s t : Set X} (hst : s ⊆ t) (x : s) :
   replace this : ↑a ∈ (WithTop.some '' {a | x.1 ∉ sᵈ[a + 1]}) := by
     exact mem_image_of_mem WithTop.some this
   exact CompleteSemilatticeInf.sInf_le (WithTop.some '' {a | ↑x ∉ sᵈ[a + 1]}) (↑a) this
+
+theorem cbRank_lt_setCBRank_iff {s : Set X} (hs : IsClosed s) {x : s} :
+    cbRank.{v} s x < (setCBRank s : WithTop Ordinal.{v}) ↔
+      x.1 ∉ perfectKernel.{v} s := by
+  constructor
+  · rw [← cbRank_eq_top_iff]
+    exact fun a ↦ LT.lt.ne_top a
+  · intro hx
+    contrapose! hx
+    simpa [perfectKernel_eq_iteratedDerivedSet_setCBRank hs] using
+      (le_cbRank_iff hs).mp hx
+
+theorem cbRank_lt_ord_succ {s : Set X} (hs : IsClosed s) {x : s}
+    (hx : x.1 ∉ perfectKernel.{v} s) :
+    cbRank.{v} s x < ((Order.succ #s).ord : WithTop Ordinal.{v}) := by
+  rw [← cbRank_lt_setCBRank_iff hs] at hx
+  exact lt_of_lt_of_le hx <| WithTop.coe_le_coe.mpr <| setCBRank_le_ord_succ hs
 
 end
 
