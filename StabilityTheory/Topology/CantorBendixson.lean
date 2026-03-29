@@ -282,6 +282,22 @@ theorem setCBRank_stay {s : Set X} (hs : IsClosed s) :
   obtain ⟨a, ha⟩ := iteratedDerivedSet_stay hs
   exact csInf_mem (s := {a : Ordinal.{u} | stayOn.{u} s a}) ⟨a, ha⟩
 
+theorem setCBRank_eq_zero_iff_perfect {s : Set X} (hs : IsClosed s) :
+    setCBRank s = 0 ↔ Perfect s := by
+  simp only [setCBRank]
+  trans stayOn s 0
+  · change _ ↔ 0 ∈ {a | stayOn s a}
+    constructor <;> intro h
+    · simpa only [←h] using csInf_mem (iteratedDerivedSet_stay hs)
+    · exact le_antisymm (csInf_le' h) (zero_le _)
+  · simp only [stayOn, zero_le, iteratedDerivedSet_zero, forall_const, perfect_iff_eq_derivedSet]
+    constructor <;> intro h
+    · specialize h (Order.succ 0)
+      rw [iteratedDerivedSet_succ, iteratedDerivedSet_zero] at h
+      exact h.symm
+    · rw [← iteratedDerivedSet_zero s, ← iteratedDerivedSet_succ'] at h
+      simpa [stayOn] using stayOn_of_iteratedDerivedSet_succ_eq hs h.symm
+
 /-- The derived-set chain strictly drops exactly before the stabilization stage. -/
 theorem lt_setCBRank_iff_nonempty_layer {s : Set X} (hs : IsClosed s)
     {a : Ordinal.{u}} :
