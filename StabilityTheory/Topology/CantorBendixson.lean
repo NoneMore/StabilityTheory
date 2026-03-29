@@ -1,4 +1,5 @@
 import Mathlib.SetTheory.Ordinal.Arithmetic
+import Mathlib.SetTheory.Cardinal.Ordinal
 import Mathlib.SetTheory.Ordinal.FixedPointApproximants
 import Mathlib.Topology.DerivedSet
 import Mathlib.Topology.Perfect
@@ -536,60 +537,54 @@ theorem cantorBendixson_decomposition {s : Set X} (hs : IsClosed s) :
       perfect_perfectKernel hs,
       (diff_union_of_subset (perfectKernel_subset s)).symm⟩
 
-section SecondCountable
+section BasisCardinal
 
 open TopologicalSpace
 
-variable [SecondCountableTopology X]
+variable {B : Set (Set X)}
 
-/-- An isolated point admits a countable-basis neighborhood isolating it inside the ambient set. -/
-theorem exists_countableBasis_of_mem_isolatedPoints {A : Set X} {x : X}
+/-- An isolated point admits a basis neighborhood isolating it inside the ambient set. -/
+theorem exists_mem_basis_of_mem_isolatedPoints (hB : IsTopologicalBasis B) {A : Set X} {x : X}
     (hx : x ∈ isolatedPoints A) :
-    ∃ U : countableBasis X, x ∈ (U : Set X) ∧ A ∩ U ⊆ {x} := by
+    ∃ U ∈ B, x ∈ U ∧ A ∩ U ⊆ {x} := by
   obtain ⟨hxA, U, hUo, hxU, hAU⟩ := mem_isolatedPoints_iff.mp hx
-  obtain ⟨V, hV, hxV, hVU⟩ := (isBasis_countableBasis X).exists_subset_of_mem_open hxU hUo
-  refine ⟨⟨V, hV⟩, hxV, ?_⟩
+  obtain ⟨V, hV, hxV, hVU⟩ := IsTopologicalBasis.exists_subset_of_mem_open hB hxU hUo
+  refine ⟨V, hV, hxV, ?_⟩
   trans A ∩ U
   · exact inter_subset_inter (subset_refl A) hVU
   simp only [hAU, subset_refl]
 
-/-- In a second-countable space, every set has countably many isolated points. -/
-theorem countable_isolatedPoints (A : Set X) :
-    (isolatedPoints A).Countable := by
+/-- The isolated points of a set have cardinality at most that of any chosen basis. -/
+theorem mk_isolatedPoints_le_mk_basis (hB : IsTopologicalBasis B) (A : Set X) :
+    #(isolatedPoints A) ≤ #B := by
   classical
-  choose f hf_mem hf_sub using
-    fun x : isolatedPoints A => exists_countableBasis_of_mem_isolatedPoints x.2
+  choose f hf_mem hf_in hf_sub using
+    fun x : isolatedPoints A => exists_mem_basis_of_mem_isolatedPoints hB x.2
   have hf_inj : Function.Injective f := by
     intro x y hxy
     rw [Subtype.ext_iff]
-    have hyf : y.1 ∈ (f x : Set X) := by simpa [hxy] using hf_mem y
+    have hyf : y.1 ∈ f x := by simpa [hxy] using hf_in y
     have hy : y.1 ∈ (f x : Set X) ∩ A := mem_inter hyf (mem_isolatedPoints_iff.mp y.2).1
     exact (hf_sub x hy.symm).symm
-  haveI : Countable (countableBasis X) := (countable_countableBasis X).to_subtype
-  exact hf_inj.countable.to_set
+  refine Cardinal.mk_le_of_injective
+    (f := fun x : isolatedPoints A => (⟨f x, hf_mem x⟩ : B)) ?_
+  intro x y hxy
+  exact hf_inj (congrArg Subtype.val hxy)
 
-theorem countable_isolated_layer {s : Set X} :
-    ∀ (a : ↑(Iio (setCBRank s))), (isolatedPoints (sᵈ[↑a])).Countable := fun _ =>
-      countable_isolatedPoints _
-
-/-- Only countably many successor stages can have a nonempty CB layer. -/
-theorem countable_strictDropStages {s : Set X} (hs : IsClosed s) :
-    Countable {a : Ordinal.{u} | (isolatedPoints (sᵈ[a])).Nonempty} := by
+/-- Only `#B` many CB layers can be nonempty. -/
+theorem mk_strictDropStages_le_mk_basis (hB : IsTopologicalBasis B) {s : Set X} (hs : IsClosed s) :
+    #{a : Ordinal.{u} | (isolatedPoints (sᵈ[a])).Nonempty} ≤ Cardinal.lift.{u+1, u} #B := by
   classical
   let I := {a : Ordinal.{u} | (isolatedPoints (sᵈ[a])).Nonempty}
   have h_basis : ∀ (a : I),
-      ∃ (x : isolatedPoints (sᵈ[a])), ∃ U : countableBasis X,
-      x.1 ∈ (U : Set X) ∧ sᵈ[a] ∩ U ⊆ {x.1} := by
+      ∃ (x : isolatedPoints (sᵈ[a])), ∃ U ∈ B,
+      x.1 ∈ U ∧ sᵈ[a] ∩ U ⊆ {x.1} := by
     intro a
-    obtain ⟨x,hx⟩ := a.2
-    exists ⟨x,hx⟩
-    obtain ⟨U,hxU,hsU⟩ := exists_countableBasis_of_mem_isolatedPoints hx
-    refine ⟨U,mem_preimage.mp hxU,?_⟩
-    simp only [subset_singleton_iff, mem_inter_iff, and_imp] at ⊢ hsU
-    intro y hy hy'
-    exact hsU y hy hy'
-  choose f g hfg_in hfg_sub using h_basis
-  have hg_inj : Function.Injective g := by
+    obtain ⟨x, hx⟩ := a.2
+    refine ⟨⟨x, hx⟩, ?_⟩
+    exact exists_mem_basis_of_mem_isolatedPoints hB hx
+  choose f g hg_mem hfg_in hfg_sub using h_basis
+  have hg_inj : Function.Injective fun a : I => (⟨g a, hg_mem a⟩ : B) := by
     intro a b hab
     rw [Subtype.ext_iff]
     wlog hlt : a < b generalizing a b
@@ -597,55 +592,76 @@ theorem countable_strictDropStages {s : Set X} (hs : IsClosed s) :
       rcases lt_or_eq_of_le hlt with h | rfl
       · exact (this hab.symm h).symm
       rfl
-    have hfb : (f b).1 ∈ sᵈ[↑a] ∩ ↑(g a) := by
-      refine ⟨?_,?_⟩
+    have hgb : g a = g b := congrArg Subtype.val hab
+    have hfb : (f b).1 ∈ sᵈ[↑a] ∩ g a := by
+      refine ⟨?_, ?_⟩
       · exact iteratedDerivedSet_antitone hs (le_of_lt hlt) <|
-          (mem_of_mem_inter_left (f b).2)
-      · simpa [hab] using hfg_in b
+          mem_of_mem_inter_left (f b).2
+      · simpa [hgb] using hfg_in b
     have hfab : (f a).1 = (f b).1 := by
       simpa using (hfg_sub a hfb).symm
     have hfa : (f a).1 ∈ derivedSet sᵈ[a] := by
       rw [hfab, ← iteratedDerivedSet_succ']
       exact iteratedDerivedSet_antitone hs (Order.add_one_le_iff.mpr hlt) <|
-        (mem_of_mem_inter_left (f b).2)
+        mem_of_mem_inter_left (f b).2
     exact False.elim <| (f a).2.2 hfa
-  haveI : Countable (countableBasis X) := (countable_countableBasis X).to_subtype
-  exact hg_inj.countable.to_set
+  have hI : #I ≤ #(ULift.{u + 1, u} B) := by
+    refine Cardinal.mk_le_of_injective
+      (f := fun a : I => ULift.up (⟨g a, hg_mem a⟩ : B)) ?_
+    intro a b hab
+    exact hg_inj (ULift.up_injective hab)
+  simpa [I, mk_uLift] using hI
 
-theorem countable_setCBRank {s : Set X} (hs : IsClosed s) :
-    Countable ↑(Iio (setCBRank s)) := by
-  -- Rewrite `a < setCBRank s` as nonemptiness of the `a`-th layer.
-  simp only [countable_coe_iff]
+/-- The initial segment below the set-level CB rank has cardinality at most `#B`. -/
+theorem mk_Iio_setCBRank_le_mk_basis (hB : IsTopologicalBasis B) {s : Set X} (hs : IsClosed s) :
+    #(Iio (setCBRank s)) ≤ Cardinal.lift.{u+1, u} #B := by
   suffices heq : Iio (setCBRank s) = {a : Ordinal.{u} | (isolatedPoints (sᵈ[a])).Nonempty} by
-    simpa [heq] using countable_strictDropStages hs
+    simpa [heq] using mk_strictDropStages_le_mk_basis hB hs
   ext x
   exact lt_setCBRank_iff_nonempty_layer hs
 
-theorem countable_diff_perfectKernel {s : Set X} (hs : IsClosed s) :
-    (s \ perfectKernel.{u} s).Countable := by
-  rw [diff_perfectKernel_eq_iUnion_layers hs]
-  haveI := countable_setCBRank hs
-  refine countable_iUnion_iff.mpr ?_
-  exact countable_isolated_layer
+/-- The set-level CB rank is bounded by the successor ordinal attached to `#B`. -/
+theorem setCBRank_lt_ord_succ_mk_basis (hB : IsTopologicalBasis B) {s : Set X} (hs : IsClosed s) :
+    setCBRank s < (Order.succ #B).ord := by
+  rw [Cardinal.lt_ord]
+  have hcard : (setCBRank s).card ≤ #B := by
+    have hmk := mk_Iio_setCBRank_le_mk_basis hB hs
+    rw [Ordinal.mk_Iio_ordinal] at hmk
+    exact Cardinal.lift_le.mp hmk
+  exact Order.lt_succ_iff.mpr hcard
 
-/--
-The Cantor-Bendixson decomposition theorem in second countable spaces:
-the scattered part is countable, and the perfect part is `perfectKernel s`.
--/
-theorem exists_countable_union_perfectKernel_of_isClosed {s : Set X} (hs : IsClosed s) :
-    ∃ V : Set X, V.Countable ∧ Perfect (perfectKernel.{u} s) ∧
+/-- The scattered part has cardinality at most the cardinality of the chosen basis. -/
+theorem mk_diff_perfectKernel_le_mk_basis (hB : IsTopologicalBasis B) (hBinf : ℵ₀ ≤ #B)
+    {s : Set X}
+    (hs : IsClosed s) :
+    #(s \ perfectKernel.{u} s : Set X) ≤ #B := by
+  rw [diff_perfectKernel_eq_iUnion_layers hs, Set.iUnion_coe_set]
+  have hcard : (setCBRank s).card ≤ #B := by
+    have hmk := mk_Iio_setCBRank_le_mk_basis hB hs
+    rw [Ordinal.mk_Iio_ordinal] at hmk
+    exact Cardinal.lift_le.mp hmk
+  exact Cardinal.mk_biUnion_le_of_le hcard hBinf
+    (fun a => isolatedPoints (sᵈ[a]))
+    (fun a _ => mk_isolatedPoints_le_mk_basis hB _)
+
+/-- A basis-cardinality version of the Cantor-Bendixson decomposition. -/
+theorem exists_mk_le_mk_basis_union_perfectKernel_of_isClosed
+    (hB : IsTopologicalBasis B) (hBinf : ℵ₀ ≤ #B) {s : Set X} (hs : IsClosed s) :
+    ∃ V : Set X, #V ≤ #B ∧ Perfect (perfectKernel.{u} s) ∧
       s = V ∪ perfectKernel.{u} s := by
-  exists (s \ perfectKernel.{u} s)
-  refine ⟨countable_diff_perfectKernel hs,
-    perfect_perfectKernel hs,
-    Eq.symm (diff_union_of_subset (perfectKernel_subset s))⟩
+  refine ⟨s \ perfectKernel.{u} s, mk_diff_perfectKernel_le_mk_basis hB hBinf hs,
+    perfect_perfectKernel hs, ?_⟩
+  exact Eq.symm (diff_union_of_subset (perfectKernel_subset s))
 
-theorem countable_setOf_cbRank_lt_top {s : Set X} (hs : IsClosed s) :
-    (↑{x : s | cbRank.{u} s x < ⊤} : Set X).Countable := by
-  rw [setOf_cbRank_lt_top_eq_diff_perfectKernel]
-  exact countable_diff_perfectKernel hs
+/-- The points of finite CB rank are bounded in number by the basis cardinality. -/
+theorem mk_setOf_cbRank_lt_top_le_mk_basis (hB : IsTopologicalBasis B) (hBinf : ℵ₀ ≤ #B)
+    {s : Set X}
+    (hs : IsClosed s) :
+    #(↑{x : s | cbRank.{u} s x < ⊤} : Set X) ≤ #B := by
+  simpa [setOf_cbRank_lt_top_eq_diff_perfectKernel] using
+    mk_diff_perfectKernel_le_mk_basis hB hBinf hs
 
-end SecondCountable
+end BasisCardinal
 
 end
 
