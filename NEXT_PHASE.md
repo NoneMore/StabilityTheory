@@ -7,8 +7,7 @@ Current snapshot:
 - Tasks 1–4 (iteratedDerivedSet, perfectKernel, pointwise cbRank, set-level
   cbRank) are implemented in `StabilityTheory/Topology/CantorBendixson.lean`.
 - Integration and verification are complete for the topology-side rank API.
-- **P1–P3 are complete. Priority now shifts to P4**: scattered sets and the
-  Cantor-Bendixson decomposition, before moving on to bridge layers or
+- **P1–P4 are complete.** Priority now shifts to bridge layers and
   model-theory integration.
 
 ## Phase 2: Cantor-Bendixson Rank
@@ -17,7 +16,7 @@ Goal:
 - [x] Introduce a general-topology development for transfinite derived sets.
 - [x] Keep the core API independent of model theory.
 - [x] Complete the perfectKernel maximality and set-level rank API.
-- [ ] **Complete the scattered/decomposition API (current priority).**
+- [x] Complete the scattered/decomposition API.
 - [ ] Prepare the topology bridge layer needed later for Morley rank on type spaces.
 
 Why this phase matters:
@@ -55,16 +54,17 @@ that earlier items unblock later ones.
       `cbRank x < setCBRank s ↔ x ∉ perfectKernel s`.
 - [x] `cbRank_lt_ord_succ` (rank is bounded by `(succ #(Set X)).ord`).
 
-### P4. Scattered sets and Cantor-Bendixson decomposition — current priority
+### P4. Scattered sets and Cantor-Bendixson decomposition — DONE
 
-- [ ] Define `IsScattered` (no nonempty perfect subset) or characterize via
+- [x] Define `IsScattered` (no nonempty perfect subset) or characterize via
       `perfectKernel_eq_empty_iff`.
-- [ ] Prove countability of the scattered part `s \ perfectKernel s` under
+- [x] Prove countability of the scattered part `s \ perfectKernel s` under
       `SecondCountableTopology`, either independently or by connecting to
       Mathlib's `exists_countable_union_perfect_of_isClosed`.
-- [ ] Establish that `perfectKernel s` equals the `D` in Mathlib's
-      `exists_countable_union_perfect_of_isClosed` (bridge the two approaches).
-- [ ] `countable_setOf_cbRank_lt_top` under `SecondCountableTopology`
+- [x] Keep the intrinsic `perfectKernel` decomposition separate from Mathlib's
+      existential `exists_countable_union_perfect_of_isClosed`; no witness-ID
+      bridge is planned for this phase.
+- [x] `countable_setOf_cbRank_lt_top` under `SecondCountableTopology`
       (the scattered part is countable).
 
 ---
@@ -128,12 +128,12 @@ that earlier items unblock later ones.
 - [ ] Add the follow-up bridge layer that applies the pure topology API to
       `typesWith` subsets of type spaces without duplicating model-theoretic lemmas.
 
-### Task 6 follow-up: universe design
+### Task 6 follow-up: universe design — DONE
 
-The ordinal universe parameter `u` in `perfectKernel.{u}` is independent of
-the type universe `v`.  When `u < v` the intersection may not capture full
-stabilization.  Key theorems already pin `u = v`; document or constrain the
-definitions accordingly.
+The file now uses a single universe `u` for both the ambient type and the
+ordinal stages. This drops universe polymorphism for the Cantor-Bendixson API
+and avoids the truncated-kernel issue that arose when the ordinal universe was
+allowed to be smaller than the type universe.
 
 ---
 
@@ -160,5 +160,5 @@ definitions accordingly.
 - [x] `perfectKernel` has the basic API from P1.
 - [x] `perfectKernel` has the remaining maximality API from P2.
 - [x] Set-level CB rank is defined and connected to pointwise rank (P3).
-- [ ] The Cantor-Bendixson decomposition is proved or connected to Mathlib's version (P4).
+- [x] The Cantor-Bendixson decomposition is proved intrinsically (P4).
 - [ ] The bridge API for Morley rank on type spaces is packaged in its own follow-up layer.
