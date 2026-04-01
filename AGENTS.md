@@ -38,14 +38,50 @@ The following environment variables are expected to be available in the shell:
   - `refactor(PartialType): golf isMax_iff_forall_mem_or_not_mem`
   - `docs: add roadmap for Stone space phase`
 
-## GitHub MCP Pull Requests
+## Documentation Maintenance
 
-- Before calling `create_pull_request`, load the pull request template from the target repository's default branch.
-- Check in this order: `.github/pull_request_template.md`, `pull_request_template.md`, `docs/pull_request_template.md`, then `.github/PULL_REQUEST_TEMPLATE/`.
-- If no repository template exists, check for an organization or user default community health template.
-- Pass the template contents as the `body` to `create_pull_request`.
-- If the pull request already exists, use `update_pull_request` to set the `body`.
-- If multiple templates exist and the correct one is unclear, ask the user which one to use.
+### `README.md`
+
+- Treat `README.md` as the top-level project document.
+- It should include:
+  - the project goals, including which theory is being formalized, which major results serve as milestones, and the long-term vision;
+  - the major results and significant changes, kept in reverse chronological order;
+  - the project structure, including descriptions of the documentation files;
+  - the correspondence with non-formal materials, including reference materials and any differences between important results or definitions and those materials;
+  - the current limitations, known defects, and goals that have not yet been achieved.
+- The user has sole discretion over what counts as a "major result" or "significant change" for this section.
+- Update timing:
+  - When the user indicates that committed content belongs in the "major results and significant changes" section, explicitly indicate that `README.md` must be updated.
+- Update content:
+  - Update the "major results and significant changes" section only for changes the user has chosen to record there.
+  - Update the project structure, the correspondence with non-formal materials, and the current limitations sections to match that committed change.
+
+### `ROADMAP.md`
+
+- Treat `ROADMAP.md` as the roadmap document.
+- Its role is the one currently served by `PLAN.md`: upstream repository interface status and summary, overall formalization strategy, and for each phase an overall goal plus several finer-grained tasks.
+- It should no longer include:
+  - "recently completed";
+  - "still pending";
+  - proof strategies for the sub-tasks of unfinished phases.
+- Update timing:
+  - When a full phase goal has been implemented, explicitly indicate that `ROADMAP.md` must be updated.
+- Update content:
+  - Re-summarize the implemented content of the completed phase from the actual implementation.
+  - Do not preserve design intent when it conflicts with the implementation; the actual implementation always wins.
+  - Unless explicitly instructed otherwise, do not revise the design of unfinished phases based on already-implemented content.
+
+### `PLAN.md`
+
+- Treat `PLAN.md` as the current-phase plan document.
+- Its role is the one currently served by `NEXT_PHASE.md`: a refinement of the current phase goals, including the correspondence between definitions or theorems and declarations, together with a rough proof strategy.
+- Update timing:
+  - For every commit, automatically check whether it contains substantive changes relevant to the plan document.
+  - If there is no substantive plan-relevant change, leave `PLAN.md` unchanged.
+- Update content:
+  - Update the completion status in `PLAN.md` to reflect the committed change.
+  - Update the summaries of completed content to reflect the committed change.
+  - When the implementation conflicts with the plan document, the actual implementation always wins.
 
 ## Optional MCP Note
 
