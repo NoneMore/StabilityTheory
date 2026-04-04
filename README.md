@@ -1,5 +1,7 @@
 # StabilityTheory
 
+**Documentation:** [https://NoneMore.github.io/StabilityTheory/](https://NoneMore.github.io/StabilityTheory/)
+
 Lean 4 project for formalizing core parts of classical stability theory. The
 primary theorem milestone is Morley's Categoricity Theorem, and the long-term
 goal is a reusable Lean library for the topological and model-theoretic
