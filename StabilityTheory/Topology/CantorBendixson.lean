@@ -471,7 +471,7 @@ theorem cbRank_mono {s t : Set X} (hst : s ⊆ t) (x : s) :
   have : ↑x ∉ sᵈ[a + 1] := (mem_compl_iff sᵈ[a + 1] ↑x).mp fun a ↦ ha (this a)
   replace this : ↑a ∈ (WithTop.some '' {a | x.1 ∉ sᵈ[a + 1]}) := by
     exact mem_image_of_mem WithTop.some this
-  exact CompleteSemilatticeInf.sInf_le (WithTop.some '' {a | ↑x ∉ sᵈ[a + 1]}) (↑a) this
+  exact sInf_le this
 
 theorem cbRank_lt_setCBRank_iff {s : Set X} (hs : IsClosed s) {x : s} :
     cbRank.{u} s x < (setCBRank s : WithTop Ordinal.{u}) ↔
