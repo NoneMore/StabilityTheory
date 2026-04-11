@@ -3,6 +3,8 @@ import StabilityTheory.ModelTheory.Semantics
 import StabilityTheory.ModelTheory.PartialTypes
 import StabilityTheory.ModelTheory.Types
 import StabilityTheory.ModelTheory.BaseTypes
+import StabilityTheory.ModelTheory.LanguageMap
 import StabilityTheory.ModelTheory.LanguageMapOnUniv
+import StabilityTheory.ModelTheory.CompleteTypeMapOnUniv
 import StabilityTheory.ModelTheory.OmegaStable
 import StabilityTheory.ModelTheory.Topology.Types

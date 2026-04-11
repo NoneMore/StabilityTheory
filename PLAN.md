@@ -29,9 +29,11 @@ Current snapshot:
 - No local file yet for isolated types, strongly minimal sets, saturated
   models, or prime models.
 - The low-level full-parameter-set language-map comparison is now in place.
-  The remaining Phase 3 work starts with the induced equivalence on complete
-  types, then moves to restriction maps and the first
-  elementary-substructure transport lemmas.
+  `CompleteTypeMapOnUniv.lean` now also contains the added-constants base
+  theory transport lemmas needed for the next comparison step.  The remaining
+  Phase 3 work starts with the induced equivalence on complete types, then
+  moves to restriction maps and the first elementary-substructure transport
+  lemmas.
 
 ## Phase 3: Parameterized Types and Omega-Stability
 
@@ -110,7 +112,10 @@ countable type is countable.
 
 Builds on: L1.
 
-Status: L2.1 is implemented in `LanguageMapOnUniv.lean`; L2.2 and L2.3 remain.
+Status: L2.1 is implemented in `LanguageMapOnUniv.lean`.  The added-constants
+base-theory transport lemmas used by L2.2 are now implemented in
+`CompleteTypeMapOnUniv.lean`, while the complete-type equivalence and the
+bundled-model countability corollary still remain.
 
 The over-model space `L.CompleteTypeOver M (Fin 1)` should remain available,
 but only as a derived reformulation of types over the full parameter set of
@@ -184,6 +189,13 @@ Implementation note:
   semantic transport on `M`, and the equivalence on complete types should then
   be induced by pushing forward and pulling back maximal theories along the
   `LEquiv.onSentence` bijection.
+
+Current status:
+- `CompleteTypeMapOnUniv.lean` now packages the added-constants elementary
+  diagram transport lemmas in both directions, so the base-theory alignment
+  needed by `toOverSetUniv` and `toOverModelUniv` is available.
+- The remaining work in L2.2 is to discharge the `subset'` fields of those
+  maps and the inverse-law proofs for `equivOverSetUniv`.
 
 **L2.3 — Recover countability over countable bundled models.**
 
