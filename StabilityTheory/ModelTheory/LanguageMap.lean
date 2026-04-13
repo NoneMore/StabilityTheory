@@ -28,6 +28,10 @@ theorem LHom.id_sumMap_id (L : Language.{u, v}) (L' : Language.{u', v'}) :
   · ext _ R
     cases R <;> simp
 
+/-- The identity language homomorphism is injective. -/
+theorem LHom.id_injective (L : Language.{u, v}) : (LHom.id L).Injective :=
+  ⟨fun h => h, fun h => h⟩
+
 /-- Composition of sum-language maps is computed componentwise. -/
 theorem LHom.sumMap_comp_sumMap (φ₂ : L' →ᴸ L'') (ψ₂ : L₃ →ᴸ L₄) (φ₁ : L →ᴸ L')
     (ψ₁ : L₁ →ᴸ L₃) :
@@ -38,6 +42,16 @@ theorem LHom.sumMap_comp_sumMap (φ₂ : L' →ᴸ L'') (ψ₂ : L₃ →ᴸ L�
   · ext _ R
     cases R <;> simp
 
+/-- If two language homomorphisms are injective, then their sum-language map is injective. -/
+theorem LHom.sumMap_injective {φ : L →ᴸ L'} {ψ : L₁ →ᴸ L₂}
+    (hφ : φ.Injective) (hψ : ψ.Injective) : (φ.sumMap ψ).Injective :=
+  ⟨by
+      intro n
+      exact Sum.map_injective.2 ⟨hφ.onFunction, hψ.onFunction⟩,
+    by
+      intro n
+      exact Sum.map_injective.2 ⟨hφ.onRelation, hψ.onRelation⟩⟩
+
 /-- Composition of maps between constant languages is induced by function composition on the
 index types. -/
 theorem LHom.constantsOnMap_comp {α β γ : Type*} (f : α → β) (g : β → γ) :
@@ -47,6 +61,16 @@ theorem LHom.constantsOnMap_comp {α β γ : Type*} (f : α → β) (g : β → 
   cases n with
   | zero => simp [constantsOnMap]
   | succ => cases c
+
+/-- If the index map is injective, then the induced map on constant languages is injective. -/
+theorem LHom.constantsOnMap_injective {α β : Type*} {f : α → β} (hf : Function.Injective f) :
+    (LHom.constantsOnMap f).Injective :=
+  ⟨by
+      intro n
+      cases n with
+      | zero => simpa [LHom.constantsOnMap] using hf
+      | succ n => exact fun c => isEmptyElim c,
+    fun {n} R => isEmptyElim R⟩
 
 /-- The identity map on a constant language is induced by the identity function on the index
 type. -/

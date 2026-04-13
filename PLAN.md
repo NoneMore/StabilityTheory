@@ -5,8 +5,10 @@ omega-stability interface layer.  The over-model and over-parameter-set type
 spaces (`CompleteTypeOver`, `CompleteTypeOverSet`) compile, the primitive
 definition of `IsOmegaStable` uses parameter sets, and the canonical
 comparison between types over `M` and over `Set.univ : Set M` is now
-implemented.  The remaining work is the bundled-model countability corollary
-and the first restriction and elementary-substructure transport lemmas.
+implemented.  The remaining work is the surjectivity and derived over-model
+parts of the restriction layer, the elementary-substructure transport lemmas,
+and then the final comparison with the usual bundled-model formulation in the
+countable-language complete-theory setting.
 
 Current snapshot:
 - Phase 0, Phase 1, and Phase 2 are complete.
@@ -28,6 +30,10 @@ Current snapshot:
   `CompleteTypeOver.toOverSetUniv` and
   `CompleteTypeOverSet.toOverModelUniv`, and the resulting equivalence
   `CompleteTypeOver.equivOverSetUniv`.
+- `OmegaStable.lean` now also defines restriction of complete types along
+  parameter inclusions, together with the supporting language-map lemmas
+  `restrictLHom`, `restrictLHom_injective`, and
+  `onTheory_completeTheory_mono`.
 - The intended counted type spaces for `omega`-stability are complete `1`-types
   `L.CompleteTypeOverSet A (Fin 1)` over countable parameter sets `A`.
 - Over-model type spaces `L.CompleteTypeOver M (Fin 1)` remain part of the
@@ -35,9 +41,11 @@ Current snapshot:
   formulation rather than the primitive definition.
 - No local file yet for isolated types, strongly minimal sets, saturated
   models, or prime models.
-- The remaining Phase 3 work starts with the bundled-model countability
-  corollary in `OmegaStable.lean`, then moves to restriction maps and the
-  first elementary-substructure transport lemmas.
+- The remaining Phase 3 work in `OmegaStable.lean` is now the surjectivity
+  and over-model companion to restriction, then the first
+  elementary-substructure transport lemmas, and finally the
+  countable-language complete-theory comparison theorem for the bundled-model
+  formulation.
 
 ## Phase 3: Parameterized Types and Omega-Stability
 
@@ -49,8 +57,9 @@ Goal:
 - [x] Redefine `IsOmegaStable` by countability of complete `1`-types over
       countable parameter sets, without going through Morley rank or total
       transcendence.
-- [ ] Recover the countable bundled-model formulation as a derived theorem
-      from the parameter-set definition and the full-parameter comparison map.
+- [ ] Recover the usual bundled-model formulation as an equivalent
+      reformulation under the countable-language and complete-theory
+      hypotheses used in the classical textbook definition.
 - [ ] Provide the first transport lemmas needed later for omitting types,
       prime models, and strongly minimal sets.
 
@@ -67,15 +76,17 @@ countable-language and complete-theory setting.
 
 ---
 
-## Current Priority: Bundled-Model Countability and Restriction Maps
+## Current Priority: Restriction Maps and Elementary-Substructure Transport
 
 The over-model and over-parameter-set type spaces are in place, the primitive
 `IsOmegaStable` definition has been revised, and the `Set.univ` comparison is
 now packaged both at the language level and at the complete-type level.  The
-next bottleneck is therefore the first theorem layer on top of that
-equivalence: recover countability for bundled-model type spaces from the
-parameter-set definition, then implement restriction along parameter inclusion
-before moving on to elementary-substructure transport.
+next bottleneck is therefore the rest of the first change-of-base layer on top
+of that equivalence: prove surjectivity of restriction, package the derived
+over-model restriction map, and then package the elementary-substructure
+transport needed to move countable parameter sets into countable ambient
+models.  The comparison with the usual bundled-model formulation should be
+deferred until those ingredients are available.
 
 ### Target Definition
 
@@ -117,8 +128,9 @@ countable type is countable.
 Builds on: L1.
 
 Status: L2.1 and L2.2 are implemented in `LanguageMapOnUniv.lean` and
-`CompleteTypeMapOnUniv.lean`.  The bundled-model countability corollary L2.3
-still remains.
+`CompleteTypeMapOnUniv.lean`.  The full-parameter-set comparison layer itself
+is complete; the final bundled-model comparison theorem is deferred to the end
+of the phase.
 
 The over-model space `L.CompleteTypeOver M (Fin 1)` should remain available,
 but only as a derived reformulation of types over the full parameter set of
@@ -129,8 +141,8 @@ Packaging note:
   compatibility should live below the complete-type API.
 - The induced equivalence on complete types should live in the base-change
   layer built on top of that low-level interface.
-- The countability corollary for `IsOmegaStable` should remain in
-  `OmegaStable.lean`.
+- The forward bundled-model countability corollary and the final comparison
+  theorem for `IsOmegaStable` should remain in `OmegaStable.lean`.
 
 **L2.1 — Compare constants for `M` with constants for `Set.univ : Set M`.**
 
@@ -202,17 +214,11 @@ Implemented content:
   `LHom.id_onTheory`, and `LEquiv.addConstants` simp lemmas used to prove the
   inverse laws for `equivOverSetUniv`.
 
-**L2.3 — Recover countability over countable bundled models.**
-
-    theorem Theory.IsOmegaStable.countable_typeOver_of_countable
-        (hT : T.IsOmegaStable) (M : T.ModelType) (hM : Countable M) :
-        Countable (L.CompleteTypeOver M (Fin 1))
-
-Apply the definition at `A = Set.univ`, then transport along L2.2.
-
 ### L3. Restriction Maps and Monotonicity
 
 File: `OmegaStable.lean`.  Builds on: `PartialTypes.lean` compactness, L1, L2.
+
+Status: L3.1 is implemented in `OmegaStable.lean`; L3.2 and L3.3 remain.
 
 With the parameter-set formulation primitive, the first change-of-base map
 should be restriction along inclusion of parameter sets.
@@ -225,6 +231,12 @@ should be restriction along inclusion of parameter sets.
 
 Pull back along the map `L.lhomWithConstantsMap` induced by the inclusion
 `A ↪ B`.
+
+Implemented content:
+- `OmegaStable.lean` defines the auxiliary language map `restrictLHom`,
+  proves `restrictLHom_injective`, proves the base-theory monotonicity lemma
+  `onTheory_completeTheory_mono`, and packages the resulting map
+  `CompleteTypeOverSet.restrict`.
 
 **L3.2 — Surjectivity of restriction.**
 
@@ -287,20 +299,20 @@ Implemented so far:
    transport lemmas in `LanguageMapOnUniv.lean`.
 2. **L2.2** — Build the comparison between `CompleteTypeOver` and
    `CompleteTypeOverSet` at `Set.univ` in `CompleteTypeMapOnUniv.lean`.
+3. **L3.1** — Implement restriction of complete types along parameter
+   inclusion in `OmegaStable.lean`.
 
 Remaining dependency order:
 
-1. **L2.3** — Recover the bundled-model countability theorem as a corollary.
-2. **L3.1, L3.2** — Implement restriction along parameter inclusion and its
-   surjectivity.
-3. **L3.3** — Reintroduce over-model restriction as a derived map.
-4. **L4.1, L4.2** — Package the elementary-substructure transport lemmas for
+1. **L3.2** — Prove surjectivity of restriction along parameter inclusion.
+2. **L3.3** — Reintroduce over-model restriction as a derived map.
+3. **L4.1, L4.2** — Package the elementary-substructure transport lemmas for
    later phases.
+4. **L5.1** — State and prove the countable-language complete-theory
+   equivalence with the usual bundled-model formulation.
 
 ### Optional Extensions (not acceptance criteria)
 
-- [ ] Prove explicit equivalence with the old bundled-model formulation under
-      additional hypotheses, when that comparison is needed later.
 - [ ] Invariance of `IsOmegaStable` under language isomorphism.
 - [ ] Countability of *realized* complete `1`-types over countable bases.
 - [ ] First isolated-type definitions and connection to the Stone topology.
@@ -391,8 +403,48 @@ The current phase should respect the following implemented content.
 - [x] The canonical equivalence between complete types over `M` and over
       `Set.univ : Set M` is packaged below the `omega`-stability theorem
       layer.
-- [ ] Countability of complete `1`-types over countable bundled models is
-      recovered as a derived theorem from the parameter-set definition.
-- [ ] The first restriction and change-of-base lemmas are proved.
+- [x] Restriction of complete types along parameter inclusion is implemented.
+- [ ] The remaining surjectivity and change-of-base lemmas are proved.
+- [ ] In the countable-language complete-theory setting, the primitive
+      parameter-set definition is proved equivalent to the usual bundled-model
+      formulation.
 - [ ] The plan stays aligned with the existing `CompleteType` and topology API
       while leaving Morley rank for the later post-categoricity phase.
+
+## Final Comparison Theorem
+
+The old one-way bundled-model countability corollary is better treated as the
+forward implication of the end-of-phase comparison theorem, since the reverse
+direction depends on the restriction and elementary-substructure transport
+lemmas from L3 and L4.
+
+### L5.1 — Equivalent bundled-model formulation in the countable complete setting
+
+File: `OmegaStable.lean`.  Builds on: L2, L3, L4, and
+`Mathlib.ModelTheory.Satisfiability`.
+
+    theorem Theory.isOmegaStable_iff_countable_typeOver_of_countable
+        (hL : L.card ≤ ℵ₀) (hT : T.IsComplete) :
+        T.IsOmegaStable ↔
+          ∀ (M : T.ModelType), Countable M →
+            Countable (L.CompleteTypeOver M (Fin 1))
+
+This should be the explicit comparison theorem that justifies the familiar
+countable complete-theory packaging of `omega`-stability while keeping the
+parameter-set formulation primitive in the repository.
+
+Proof strategy:
+- Forward direction: apply `T.IsOmegaStable` at `A = Set.univ`, then transport
+  along `CompleteTypeOver.equivOverSetUniv`.  The old bundled-model
+  countability corollary can be recorded as this implication or as an
+  immediately extracted helper lemma.
+- Reverse direction: given a countable parameter set `A : Set M`, first split
+  off the finite-model case if needed.  In the infinite case, use L4.1 to
+  place `A` inside a countable elementary submodel `S`, transport the type
+  space over `A` from `M` to `S` via L4.2, apply the bundled-model hypothesis
+  to `S`, and descend along the surjective restriction map from L3.
+
+Implementation note:
+- The theorem should state the countable-language hypothesis explicitly.
+- The proof should isolate precisely where completeness is used, rather than
+  baking it back into the primitive definition.
