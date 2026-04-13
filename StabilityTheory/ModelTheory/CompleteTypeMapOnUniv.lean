@@ -87,6 +87,8 @@ abbrev UnivEquivAddConstants :
     (L[[M]])[[α]] ≃ᴸ (L[[(Set.univ : Set M)]])[[α]] :=
   (L.UnivEquiv M).addConstants α
 
+variable {M α}
+
 /-- The base theory for types over `M` transports to the base theory for types over `Set.univ`. -/
 @[simp]
 theorem onTheory_elementaryDiagram_UnivEquivAddConstants :
@@ -118,26 +120,54 @@ namespace CompleteTypeOver
 
 /-- Push a complete type over the bundled model `M` to the full-parameter-set presentation. -/
 def toOverSetUniv (p : L.CompleteTypeOver M α) :
-    L.CompleteTypeOverSet (M := M) (Set.univ : Set M) α where
-  toTheory := (L.UnivEquivAddConstants M α).toLHom.onTheory
-    (p : (L[[M]])[[α]].Theory)
+    L.CompleteTypeOverSet (Set.univ : Set M) α where
+  toTheory := (L.UnivEquivAddConstants M α).toLHom.onTheory p
   subset' := by
-    sorry
-  isMaximal' := by
-    exact Theory.IsMaximal.onTheory_of_equiv
-      (φ := L.UnivEquivAddConstants M α) p.isMaximal
+    rintro φ ⟨ψ,hMψ,rfl⟩
+    exists (L[[M]].lhomWithConstants α).onSentence ((L.UnivEquiv M).symm.onSentence ψ)
+    refine ⟨?_,?_⟩
+    · apply p.subset'
+      simp only [LEquiv.onSentence_apply, LEquiv.symm_toLHom, LHom.mem_onTheory, mem_completeTheory]
+      exists (L.UnivEquiv M).symm.onSentence ψ
+      refine ⟨?_,?_⟩
+      · rwa [realize_onSentence_UnivEquiv_symm]
+      · simp
+    · simp only [LHom.onSentence, LHom.onFormula, UnivEquivAddConstants,
+        LEquiv.toLHom_addConstants, LEquiv.onSentence_apply, LEquiv.symm_toLHom]
+      rw [← Function.comp_apply (f := (L[[M]].lhomWithConstants α).onBoundedFormula),
+        ← LHom.comp_onBoundedFormula, ← Function.comp_apply
+        (f := (LHom.addConstants α (L.UnivEquiv M).toLHom).onBoundedFormula),
+        ← LHom.comp_onBoundedFormula, ← LHom.comp_assoc]
+      simp only [(L.UnivEquiv M).toLHom.addConstants_comp_lhomWithConstants, LHom.comp_assoc,
+        LEquiv.right_inv, LHom.comp_id]
+  isMaximal' := p.isMaximal.onTheory_of_equiv <| L.UnivEquivAddConstants M α
 
 end CompleteTypeOver
 
 namespace CompleteTypeOverSet
 
 /-- Pull a complete type over the full parameter set back to the bundled-model presentation. -/
-def toOverModelUniv (p : L.CompleteTypeOverSet (M := M) (Set.univ : Set M) α) :
+def toOverModelUniv (p : L.CompleteTypeOverSet (Set.univ : Set M) α) :
     L.CompleteTypeOver M α where
-  toTheory := ((L.UnivEquivAddConstants M α).symm.toLHom).onTheory
-    (p : ((L[[(Set.univ : Set M)]])[[α]]).Theory)
+  toTheory := ((L.UnivEquivAddConstants M α).symm.toLHom).onTheory p
   subset' := by
-    sorry
+    rintro φ ⟨ψ,hMψ,rfl⟩
+    exists (L[[↑univ]].lhomWithConstants α).onSentence ((L.UnivEquiv M).onSentence ψ)
+    refine ⟨?_,?_⟩
+    · apply p.subset'
+      simp only [LEquiv.onSentence_apply, LHom.mem_onTheory, mem_completeTheory]
+      exists (L.UnivEquiv M).onSentence ψ
+      refine ⟨?_,?_⟩
+      · rwa [realize_onSentence_UnivEquiv]
+      · simp
+    · simp only [LHom.onSentence, LHom.onFormula, UnivEquivAddConstants, LEquiv.symm_toLHom,
+      LEquiv.invLHom_addConstants, LEquiv.onSentence_apply]
+      rw [← Function.comp_apply (f := (L[[↑univ]].lhomWithConstants α).onBoundedFormula),
+        ← LHom.comp_onBoundedFormula, ← Function.comp_apply
+        (f := (LHom.addConstants α (L.UnivEquiv M).invLHom).onBoundedFormula),
+        ← LHom.comp_onBoundedFormula, ← LHom.comp_assoc]
+      simp only [(L.UnivEquiv M).invLHom.addConstants_comp_lhomWithConstants, LHom.comp_assoc,
+        LEquiv.left_inv, LHom.comp_id]
   isMaximal' := by
     exact Theory.IsMaximal.onTheory_of_equiv
       (φ := (L.UnivEquivAddConstants M α).symm) p.isMaximal
@@ -146,28 +176,41 @@ end CompleteTypeOverSet
 
 namespace CompleteTypeOver
 
+variable (L M α)
+
 /-- The canonical comparison between complete types over `M` and over `Set.univ : Set M`. -/
 def equivOverSetUniv :
     L.CompleteTypeOver M α ≃
-      L.CompleteTypeOverSet (M := M) (Set.univ : Set M) α where
-  toFun := CompleteTypeOver.toOverSetUniv (L := L) (M := M) (α := α)
-  invFun := CompleteTypeOverSet.toOverModelUniv (L := L) (M := M) (α := α)
+      L.CompleteTypeOverSet (Set.univ : Set M) α where
+  toFun := fun p => p.toOverSetUniv
+  invFun := fun p => p.toOverModelUniv
   left_inv := by
-    sorry
+    intro p
+    apply SetLike.ext
+    intro φ
+    change φ ∈ ((L.UnivEquivAddConstants M α).symm.toLHom).onTheory
+      ((L.UnivEquivAddConstants M α).toLHom.onTheory p) ↔ _
+    simp only [LEquiv.symm_toLHom, LHom.onTheory_comp,
+      LEquiv.left_inv, LHom.id_onTheory, SetLike.mem_coe]
   right_inv := by
-    sorry
+    intro p
+    apply SetLike.ext
+    intro φ
+    change φ ∈ ((L.UnivEquivAddConstants M α).toLHom).onTheory
+      ((L.UnivEquivAddConstants M α).symm.toLHom.onTheory p) ↔ _
+    simp only [LEquiv.symm_toLHom, LHom.onTheory_comp,
+      LEquiv.right_inv, LHom.id_onTheory, SetLike.mem_coe]
+
+variable {L M α}
 
 @[simp]
 theorem equivOverSetUniv_apply (p : L.CompleteTypeOver M α) :
-    CompleteTypeOver.equivOverSetUniv (L := L) (M := M) (α := α) p =
-      CompleteTypeOver.toOverSetUniv (L := L) (M := M) (α := α) p :=
+    p.equivOverSetUniv L M α  = p.toOverSetUniv  :=
   rfl
 
 @[simp]
-theorem equivOverSetUniv_symm_apply
-    (p : L.CompleteTypeOverSet (M := M) (Set.univ : Set M) α) :
-    (CompleteTypeOver.equivOverSetUniv (L := L) (M := M) (α := α)).symm p =
-      CompleteTypeOverSet.toOverModelUniv (L := L) (M := M) (α := α) p :=
+theorem equivOverSetUniv_symm_apply (p : L.CompleteTypeOverSet (Set.univ : Set M) α) :
+    (CompleteTypeOver.equivOverSetUniv L M α).symm p = p.toOverModelUniv :=
   rfl
 
 end CompleteTypeOver

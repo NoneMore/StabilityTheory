@@ -2,10 +2,11 @@
 
 This file tracks the active short-term plan.  The current phase remains the
 omega-stability interface layer.  The over-model and over-parameter-set type
-spaces (`CompleteTypeOver`, `CompleteTypeOverSet`) compile, and the primitive
-definition of `IsOmegaStable` has now been switched back to the parameter-set
-formulation.  The remaining work is the comparison with over-model type spaces
-and the first restriction and transport lemmas.
+spaces (`CompleteTypeOver`, `CompleteTypeOverSet`) compile, the primitive
+definition of `IsOmegaStable` uses parameter sets, and the canonical
+comparison between types over `M` and over `Set.univ : Set M` is now
+implemented.  The remaining work is the bundled-model countability corollary
+and the first restriction and elementary-substructure transport lemmas.
 
 Current snapshot:
 - Phase 0, Phase 1, and Phase 2 are complete.
@@ -16,11 +17,17 @@ Current snapshot:
   `Theory.IsOmegaStable` and proves the first countability corollary over
   subsets of countable models.
 - `LanguageMapOnUniv.lean` now packages the low-level comparison between
-  `L[[M]]` and `L[[Set.univ : Set M]]`, including
-  `withConstantsMapToUniv`, `withConstantsMapFromUniv`,
-  `withConstantsEquivUniv`, the two `IsExpansionOn` instances on `M`, and the
-  sentence-, theory-, and complete-theory transport lemmas attached to this
-  canonical equivalence.
+  `L[[M]]` and `L[[Set.univ : Set M]]`, including `UnivEquiv`, the two
+  `IsExpansionOn` instances on `M`, and the sentence-, theory-, and
+  complete-theory transport lemmas attached to this canonical equivalence.
+- `LanguageMap.lean` now also contains the small `onTheory` composition and
+  identity lemmas, together with the `addConstants` simp lemmas for language
+  equivalences, that support the complete-type comparison proofs.
+- `CompleteTypeMapOnUniv.lean` now packages the added-constants base-theory
+  transport lemmas, the forward and inverse maps
+  `CompleteTypeOver.toOverSetUniv` and
+  `CompleteTypeOverSet.toOverModelUniv`, and the resulting equivalence
+  `CompleteTypeOver.equivOverSetUniv`.
 - The intended counted type spaces for `omega`-stability are complete `1`-types
   `L.CompleteTypeOverSet A (Fin 1)` over countable parameter sets `A`.
 - Over-model type spaces `L.CompleteTypeOver M (Fin 1)` remain part of the
@@ -28,12 +35,9 @@ Current snapshot:
   formulation rather than the primitive definition.
 - No local file yet for isolated types, strongly minimal sets, saturated
   models, or prime models.
-- The low-level full-parameter-set language-map comparison is now in place.
-  `CompleteTypeMapOnUniv.lean` now also contains the added-constants base
-  theory transport lemmas needed for the next comparison step.  The remaining
-  Phase 3 work starts with the induced equivalence on complete types, then
-  moves to restriction maps and the first elementary-substructure transport
-  lemmas.
+- The remaining Phase 3 work starts with the bundled-model countability
+  corollary in `OmegaStable.lean`, then moves to restriction maps and the
+  first elementary-substructure transport lemmas.
 
 ## Phase 3: Parameterized Types and Omega-Stability
 
@@ -63,15 +67,15 @@ countable-language and complete-theory setting.
 
 ---
 
-## Current Priority: Comparison and Transport Lemmas
+## Current Priority: Bundled-Model Countability and Restriction Maps
 
 The over-model and over-parameter-set type spaces are in place, the primitive
-`IsOmegaStable` definition has been revised, and the low-level `Set.univ`
-language comparison is now packaged.  The next bottleneck is therefore the
-complete-type comparison layer itself: identify the bundled-model type space
-with the full-parameter-set type space using the existing semantic transport,
-then recover the bundled-model countability corollary before moving on to
-restriction and elementary-substructure transport.
+`IsOmegaStable` definition has been revised, and the `Set.univ` comparison is
+now packaged both at the language level and at the complete-type level.  The
+next bottleneck is therefore the first theorem layer on top of that
+equivalence: recover countability for bundled-model type spaces from the
+parameter-set definition, then implement restriction along parameter inclusion
+before moving on to elementary-substructure transport.
 
 ### Target Definition
 
@@ -112,10 +116,9 @@ countable type is countable.
 
 Builds on: L1.
 
-Status: L2.1 is implemented in `LanguageMapOnUniv.lean`.  The added-constants
-base-theory transport lemmas used by L2.2 are now implemented in
-`CompleteTypeMapOnUniv.lean`, while the complete-type equivalence and the
-bundled-model countability corollary still remain.
+Status: L2.1 and L2.2 are implemented in `LanguageMapOnUniv.lean` and
+`CompleteTypeMapOnUniv.lean`.  The bundled-model countability corollary L2.3
+still remains.
 
 The over-model space `L.CompleteTypeOver M (Fin 1)` should remain available,
 but only as a derived reformulation of types over the full parameter set of
@@ -141,10 +144,10 @@ compatibility.
 
 Expected deliverables:
 
-    def withConstantsEquivUniv :
+    def UnivEquiv :
         L[[M]] ≃ᴸ L[[Set.univ : Set M]]
 
-using `Equiv.Set.univ M` and the associated `lhomWithConstantsMap` maps.
+using `Equiv.Set.univ M` and `LEquiv.withConstantsCongr`.
 
 - Record that both directions of this equivalence are expansions on `M` for
   the canonical interpretations of the new constants.
@@ -166,13 +169,13 @@ Proof strategy:
   transport lemmas from `LHom.realize_onSentence` and `LHom.onTheory_model`.
 
 Implemented content:
-- `LanguageMapOnUniv.lean` defines `withConstantsMapToUniv`,
-  `withConstantsMapFromUniv`, and `withConstantsEquivUniv`.
-- It proves the two composition identities for those maps, the two
-  `IsExpansionOn` instances on `M`, the sentence- and theory-level transport
-  lemmas, and the two complete-theory transport lemmas.
+- `LanguageMapOnUniv.lean` defines `UnivEquiv`.
+- It proves the two `IsExpansionOn` instances on `M`, the sentence- and
+  theory-level transport lemmas, and the two complete-theory transport lemmas.
 
 **L2.2 — Transport complete types across that language equivalence.**
+
+Status: implemented in `CompleteTypeMapOnUniv.lean`.
 
     def CompleteTypeOver.equivOverSetUniv (M : T.ModelType) :
         L.CompleteTypeOver M (Fin 1) ≃
@@ -190,12 +193,14 @@ Implementation note:
   be induced by pushing forward and pulling back maximal theories along the
   `LEquiv.onSentence` bijection.
 
-Current status:
-- `CompleteTypeMapOnUniv.lean` now packages the added-constants elementary
-  diagram transport lemmas in both directions, so the base-theory alignment
-  needed by `toOverSetUniv` and `toOverModelUniv` is available.
-- The remaining work in L2.2 is to discharge the `subset'` fields of those
-  maps and the inverse-law proofs for `equivOverSetUniv`.
+Implemented content:
+- `CompleteTypeMapOnUniv.lean` packages
+  `Theory.IsMaximal.onTheory_of_equiv`, the added-constants elementary-diagram
+  transport lemmas in both directions, the maps `toOverSetUniv` and
+  `toOverModelUniv`, and the equivalence `equivOverSetUniv`.
+- `LanguageMap.lean` now provides the auxiliary `LHom.onTheory_comp`,
+  `LHom.id_onTheory`, and `LEquiv.addConstants` simp lemmas used to prove the
+  inverse laws for `equivOverSetUniv`.
 
 **L2.3 — Recover countability over countable bundled models.**
 
@@ -280,16 +285,16 @@ Implemented so far:
 1. **L2.1a-L2.1c** — Package the low-level `Set.univ` language equivalence,
    the canonical expansion compatibility on `M`, and the sentence-/theory-level
    transport lemmas in `LanguageMapOnUniv.lean`.
+2. **L2.2** — Build the comparison between `CompleteTypeOver` and
+   `CompleteTypeOverSet` at `Set.univ` in `CompleteTypeMapOnUniv.lean`.
 
 Remaining dependency order:
 
-1. **L2.2** — Build the comparison between `CompleteTypeOver` and
-   `CompleteTypeOverSet` at `Set.univ`.
-2. **L2.3** — Recover the bundled-model countability theorem as a corollary.
-3. **L3.1, L3.2** — Implement restriction along parameter inclusion and its
+1. **L2.3** — Recover the bundled-model countability theorem as a corollary.
+2. **L3.1, L3.2** — Implement restriction along parameter inclusion and its
    surjectivity.
-4. **L3.3** — Reintroduce over-model restriction as a derived map.
-5. **L4.1, L4.2** — Package the elementary-substructure transport lemmas for
+3. **L3.3** — Reintroduce over-model restriction as a derived map.
+4. **L4.1, L4.2** — Package the elementary-substructure transport lemmas for
    later phases.
 
 ### Optional Extensions (not acceptance criteria)
@@ -317,6 +322,8 @@ The current phase should respect the following implemented content.
 - [x] `LanguageMapOnUniv.lean` with the canonical language equivalence
       `L[[M]] ≃ᴸ L[[Set.univ : Set M]]`, together with the associated
       expansion, sentence, theory, and complete-theory transport lemmas.
+- [x] `CompleteTypeMapOnUniv.lean` with the canonical comparison between
+      `CompleteTypeOver M α` and `CompleteTypeOverSet (Set.univ : Set M) α`.
 - [x] `Theory.IsOmegaStable` in its parameter-set formulation, together with
       the first countability corollary over subsets of countable models.
 
@@ -381,6 +388,9 @@ The current phase should respect the following implemented content.
       completeness assumptions.
 - [x] Countability of types over any subset of a countable model is recovered
       immediately from the parameter-set definition.
+- [x] The canonical equivalence between complete types over `M` and over
+      `Set.univ : Set M` is packaged below the `omega`-stability theorem
+      layer.
 - [ ] Countability of complete `1`-types over countable bundled models is
       recovered as a derived theorem from the parameter-set definition.
 - [ ] The first restriction and change-of-base lemmas are proved.

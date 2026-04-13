@@ -65,15 +65,26 @@ theorem LHom.addConstants_comp_lhomWithConstants (f : L →ᴸ L') :
     (f.addConstants α).comp (L.lhomWithConstants α) = (L'.lhomWithConstants α).comp f := by
   ext <;> rfl
 
+/-- Applying `onTheory` along a composite language homomorphism agrees with applying `onTheory`
+stepwise. -/
+theorem LHom.onTheory_comp (g : L' →ᴸ L'') (f : L →ᴸ L') (T : L.Theory) :
+    g.onTheory (f.onTheory T) = (g.comp f).onTheory T := by
+  simp only [onTheory, Set.image_image]
+  congr with φ
+  simp [LHom.onSentence, LHom.onFormula]
+
+/-- Applying `onTheory` along the identity language homomorphism does nothing. -/
+theorem LHom.id_onTheory (L : Language.{u, v}) (T : L.Theory) :
+    (LHom.id L).onTheory T = T := by
+  ext φ
+  simp [LHom.mem_onTheory, LHom.onSentence, LHom.onFormula]
+
 /-- Applying `onTheory` after adjoining type-variable constants commutes with language maps. -/
 theorem LHom.onTheory_lhomWithConstants (f : L →ᴸ L') (T : L.Theory) :
     (f.addConstants α).onTheory ((L.lhomWithConstants α).onTheory T) =
       (L'.lhomWithConstants α).onTheory (f.onTheory T) := by
-  simp only [onTheory]
-  rw [Set.image_image, Set.image_image]
-  congr with φ
-  simpa [LHom.onSentence, LHom.onFormula] using
-    congrArg (fun g => g.onSentence φ) (f.addConstants_comp_lhomWithConstants (α := α))
+  simp [LHom.onTheory_comp]
+  congr
 
 end LHom
 
@@ -102,6 +113,16 @@ def withConstantsCongr : L[[α]] ≃ᴸ L'[[β]] where
 /-- Add the same auxiliary constants to both sides of a language equivalence. -/
 abbrev addConstants (φ : L ≃ᴸ L') (α : Type*) : L[[α]] ≃ᴸ L'[[α]] :=
   φ.withConstantsCongr (_root_.Equiv.refl α)
+
+@[simp]
+theorem toLHom_addConstants (φ : L ≃ᴸ L') (α : Type*) :
+    (φ.addConstants α).toLHom = φ.toLHom.addConstants α := by
+  simp [LEquiv.addConstants, LEquiv.withConstantsCongr, LHom.addConstants, LHom.constantsOnMap_id]
+
+@[simp]
+theorem invLHom_addConstants (φ : L ≃ᴸ L') (α : Type*) :
+    (φ.addConstants α).invLHom = φ.invLHom.addConstants α := by
+  simp [LEquiv.addConstants, LEquiv.withConstantsCongr, LHom.addConstants, LHom.constantsOnMap_id]
 
 end LEquiv
 
